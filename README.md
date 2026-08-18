@@ -103,6 +103,7 @@ cd backend && python app.py          # http://localhost:5000
 | `POST /api/readings` | ESP32 | รับค่าจากเซ็นเซอร์ (ต้องมี header `X-API-Key`) |
 | `GET /api/latest` | Dashboard | ค่าล่าสุดจากฐานข้อมูล |
 | `GET /data` | Dashboard | alias ของ `/api/latest` |
+| `GET /api/history` | Dashboard | ประวัติค่าช่วงเวลา (`?hours=24` default สูงสุด 30 วัน / `?limit=500` สูงสุด 2000) — downsample อัตโนมัติ, ใช้ได้ทั้ง PostgreSQL และ SQLite |
 | `GET /health` | — | ตรวจสถานะ service + ฐานข้อมูล |
 | `GET /` | — | เสิร์ฟหน้า dashboard |
 

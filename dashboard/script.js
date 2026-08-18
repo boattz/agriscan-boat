@@ -417,10 +417,156 @@ function startPolling() {
   state.timer = setInterval(fetchData, CONFIG.interval);
 }
 
+// ─── History chart (canvas — ไม่พึ่งไลบรารี) ──────────────
+const HISTORY = { hours: 24, timer: null, points: [] };
+
+function historyCandidates() {
+  const out = [];
+  const add = u => { if (!out.includes(u)) out.push(u); };
+  if (window.location.protocol.startsWith('http')) {
+    add(window.location.origin + '/api/history');
+  }
+  add(CONFIG.cloudApiUrl.replace(/\/+$/, '') + '/api/history');
+  add('http://localhost:5000/api/history');
+  return out;
+}
+
+function parseTs(s) {
+  const t = Date.parse(String(s).replace(' ', 'T'));  // SQLite ส่ง "YYYY-MM-DD HH:MM:SS" — เติม T ให้ Date.parse เข้าใจ
+  return isNaN(t) ? null : t;
+}
+
+function showChartEmpty(msg) {
+  const el = $('chart-empty');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+function hideChartEmpty() {
+  const el = $('chart-empty');
+  if (el) el.classList.add('hidden');
+}
+
+async function fetchHistory() {
+  for (const url of historyCandidates()) {
+    try {
+      const ctrl = new AbortController();
+      const timeout = setTimeout(() => ctrl.abort(), 4000);
+      const res = await fetch(url + '?hours=' + HISTORY.hours, { signal: ctrl.signal });
+      clearTimeout(timeout);
+      if (!res.ok) continue;
+      const json = await res.json();
+      if (!Array.isArray(json)) continue;
+      HISTORY.points = json;
+      drawHistory();
+      hideChartEmpty();
+      return;
+    } catch (e) { /* ลอง endpoint ถัดไป */ }
+  }
+  showChartEmpty('ไม่มีข้อมูลประวัติ — ต้องมีข้อมูลจาก backend/คลาวด์');
+}
+
+function setHistoryRange(hours) {
+  HISTORY.hours = hours;
+  document.querySelectorAll('.range-btn').forEach(b => b.classList.toggle('active', +b.dataset.hours === hours));
+  showChartEmpty('⏳ กำลังโหลดประวัติ...');
+  fetchHistory();
+}
+
+function drawHistory() {
+  const canvas = $('history-chart');
+  if (!canvas) return;
+  const pts = HISTORY.points;
+  if (!pts.length) { showChartEmpty('ยังไม่มีข้อมูลในช่วงเวลานี้'); return; }
+
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const w = rect.width;
+  const h = rect.height || 250;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const pad = { top: 18, right: 62, bottom: 26, left: 14 };
+  const plotW = w - pad.left - pad.right;
+  const plotH = h - pad.top - pad.bottom;
+
+  // แกนเวลา — ใช้เวลาจริงของจุดแรก/จุดสุดท้าย
+  const tMin = parseTs(pts[0].timestamp);
+  const tMax = parseTs(pts[pts.length - 1].timestamp);
+  const span = (tMax - tMin) || 1;
+  const x = t => pad.left + ((t - tMin) / span) * plotW;
+
+  // เส้นกริด 4 เส้น + ป้ายเวลา (HH:MM สำหรับ 24 ชม. / DD/MM HH:MM สำหรับช่วงยาว)
+  ctx.strokeStyle = 'rgba(34,197,94,0.10)';
+  ctx.lineWidth = 1;
+  ctx.fillStyle = 'rgba(148,163,184,0.75)';
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  for (let i = 0; i <= 4; i++) {
+    const gx = pad.left + (plotW * i) / 4;
+    ctx.beginPath();
+    ctx.moveTo(gx, pad.top);
+    ctx.lineTo(gx, pad.top + plotH);
+    ctx.stroke();
+    const t = new Date(tMin + (span * i) / 4);
+    const label = HISTORY.hours > 48
+      ? `${t.getDate()}/${t.getMonth() + 1} ${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`
+      : `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
+    ctx.fillText(label, gx, h - 8);
+  }
+
+  // 3 ชุดข้อมูล — แต่ละชุด normalize ด้วย min/max ของตัวเอง (ไม่ปนสเกล)
+  const series = [
+    { key: 'moisture',    color: '#4ade80', conv: v => v },
+    { key: 'temperature', color: '#fb923c', conv: v => v },
+    { key: 'ec',          color: '#22d3ee', conv: v => v / 1000 }  // µS/cm → dS/m
+  ];
+  series.forEach(s => {
+    const vals = pts.map(p => s.conv(p[s.key])).filter(v => v != null && !isNaN(v));
+    if (vals.length < 2) return;
+    const vMin = Math.min(...vals), vMax = Math.max(...vals);
+    const vSpan = (vMax - vMin) || 1;
+    const y = v => pad.top + plotH - ((v - vMin) / vSpan) * plotH;
+
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = 1.8;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    let started = false;
+    pts.forEach((p, i) => {
+      const v = s.conv(p[s.key]);
+      if (v == null || isNaN(v)) return;
+      const px = x(parseTs(p.timestamp));
+      const py = y(v);
+      if (!started) { ctx.moveTo(px, py); started = true; }
+      else ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+
+    // ค่าล่าสุดของแต่ละชุด (ขวาสุด)
+    const lv = s.conv(pts[pts.length - 1][s.key]);
+    if (lv != null && !isNaN(lv)) {
+      ctx.fillStyle = s.color;
+      ctx.font = '600 10px JetBrains Mono, monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(lv.toFixed(1), pad.left + plotW + 6, y(lv) + 4);
+    }
+  });
+}
+
+window.addEventListener('resize', () => {
+  if (HISTORY.points.length) drawHistory();
+});
+
 // ─── Init ─────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   syncCropUI();
   startPolling();
+  fetchHistory();
+  HISTORY.timer = setInterval(fetchHistory, 60000);  // กราฟประวัติรีเฟรชทุก 60 วิ (ไม่ต้องถี่เท่าค่าปัจจุบัน)
 });
 
 // Reconnect when tab becomes visible

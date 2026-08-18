@@ -628,6 +628,87 @@ body::after {
 }
 
 /* ══════════════════════════════════════════════
+   History chart
+══════════════════════════════════════════════ */
+.history-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-card);
+  padding: 18px 22px;
+  margin-bottom: 28px;
+  box-shadow: var(--shadow-card);
+}
+
+.history-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.history-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+.legend-item i {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--lg, var(--green-400));
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.history-range {
+  display: flex;
+  gap: 8px;
+}
+
+.range-btn {
+  padding: 7px 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-dim);
+  background: var(--bg-card-2);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.range-btn:hover { border-color: var(--border-glow); color: var(--green-300); }
+.range-btn.active {
+  background: rgba(34,197,94,0.15);
+  border-color: rgba(34,197,94,0.45);
+  color: var(--green-300);
+}
+
+.chart-wrap { position: relative; height: 250px; }
+#history-chart { width: 100%; height: 100%; display: block; }
+
+.chart-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border-radius: 12px;
+}
+.chart-empty.hidden { display: none; }
+
+/* ══════════════════════════════════════════════
    Footer
 ══════════════════════════════════════════════ */
 .footer {
@@ -763,6 +844,12 @@ body::after {
   .rec-icon { font-size: 1.3rem; }
   .rec-title { font-size: 0.95rem; }
   .rec-desc { font-size: 0.88rem; line-height: 1.5; }
+
+  .history-card { padding: 14px 16px; margin-bottom: 20px; }
+  .history-toolbar { gap: 10px; margin-bottom: 12px; }
+  .legend-item { font-size: 0.84rem; gap: 6px; }
+  .range-btn { font-size: 0.84rem; padding: 6px 14px; }
+  .chart-wrap { height: 200px; }
 
   .footer { margin-top: 28px; }
   .footer p { font-size: 0.8rem; }

@@ -807,6 +807,71 @@ const char* dashboard_html = R"rawliteral(<!DOCTYPE html>
       gap: 10px;
     }
     .mock-banner.visible { display: flex; }
+    
+    /* ── History chart ── */
+    .history-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-dim);
+      border-radius: var(--radius-card);
+      padding: 18px 22px;
+      margin-bottom: 28px;
+      box-shadow: var(--shadow-card);
+    }
+    .history-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .history-legend { display: flex; flex-wrap: wrap; gap: 18px; }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+    }
+    .legend-item i {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--lg, var(--green-400));
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .history-range { display: flex; gap: 8px; }
+    .range-btn {
+      padding: 7px 16px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-dim);
+      background: var(--bg-card-2);
+      color: var(--text-secondary);
+      font-family: var(--font-body);
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .range-btn:hover { border-color: var(--border-glow); color: var(--green-300); }
+    .range-btn.active {
+      background: rgba(34,197,94,0.15);
+      border-color: rgba(34,197,94,0.45);
+      color: var(--green-300);
+    }
+    .chart-wrap { position: relative; height: 250px; }
+    #history-chart { width: 100%; height: 100%; display: block; }
+    .chart-empty {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      background: var(--bg-card);
+      border-radius: 12px;
+    }
+    .chart-empty.hidden { display: none; }
 
   </style>
 </head>
@@ -830,7 +895,7 @@ const char* dashboard_html = R"rawliteral(<!DOCTYPE html>
       <div class="header-title">
         <h1>Agriscan</h1>
         <p>Real-time Soil Sensor Dashboard</p>
-        <span class="version-badge">Ⓥ 2.2.0</span>
+        <span class="version-badge">Ⓥ 2.3.0</span>
       </div>
     </div>
 
@@ -1022,9 +1087,32 @@ const char* dashboard_html = R"rawliteral(<!DOCTYPE html>
     </div>
   </div>
 
+  <!-- ═══ HISTORY CHART ═══ -->
+  <div class="section-title">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3v18h18M7 14l3-3 3 3 5-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    ประวัติข้อมูล
+  </div>
+  <div class="history-card">
+    <div class="history-toolbar">
+      <div class="history-legend">
+        <span class="legend-item" style="--lg:#4ade80;"><i></i>ความชื้น (%)</span>
+        <span class="legend-item" style="--lg:#fb923c;"><i></i>อุณหภูมิ (°C)</span>
+        <span class="legend-item" style="--lg:#22d3ee;"><i></i>EC (dS/m)</span>
+      </div>
+      <div class="history-range">
+        <button class="range-btn active" data-hours="24" onclick="setHistoryRange(24)">24 ชม.</button>
+        <button class="range-btn" data-hours="168" onclick="setHistoryRange(168)">7 วัน</button>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <canvas id="history-chart" height="250"></canvas>
+      <div class="chart-empty" id="chart-empty">⏳ กำลังโหลดประวัติ...</div>
+    </div>
+  </div>
+
   <!-- ═══ FOOTER ═══ -->
   <footer class="footer">
-    <p>Agriscan &copy; 2025 · RS485 Modbus 7-in-1 Soil Sensor</p>
+    <p>Agriscan &copy; 2026 · RS485 Modbus 7-in-1 Soil Sensor</p>
     <div class="footer-controls">
       <button class="btn-refresh" id="btn-refresh" onclick="manualRefresh()" aria-label="รีเฟรชข้อมูล">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1088,6 +1176,7 @@ const NPK_BAR_MAX = { n: 200, p: 50, k: 150 };
 // ─── Config ───────────────────────────────────────────────
 const CONFIG = {
   apiUrl:       '/data',
+  cloudApiUrl:  'https://agriscan-v2.onrender.com',
   interval:     3000,
   maxRetry:     999,
   retryDelay:   3000,
@@ -1433,11 +1522,157 @@ function startPolling() {
   state.timer = setInterval(fetchData, CONFIG.interval);
 }
 
+// ─── History chart (canvas — ไม่พึ่งไลบรารี) ──────────────
+const HISTORY = { hours: 24, timer: null, points: [] };
+
+function historyCandidates() {
+  const out = [];
+  const add = u => { if (!out.includes(u)) out.push(u); };
+  if (window.location.protocol.startsWith('http')) {
+    add(window.location.origin + '/api/history');
+  }
+  add(CONFIG.cloudApiUrl.replace(/\/+$/, '') + '/api/history');
+  add('http://localhost:5000/api/history');
+  return out;
+}
+
+function parseTs(s) {
+  const t = Date.parse(String(s).replace(' ', 'T'));  // SQLite ส่ง "YYYY-MM-DD HH:MM:SS" — เติม T ให้ Date.parse เข้าใจ
+  return isNaN(t) ? null : t;
+}
+
+function showChartEmpty(msg) {
+  const el = $('chart-empty');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+function hideChartEmpty() {
+  const el = $('chart-empty');
+  if (el) el.classList.add('hidden');
+}
+
+async function fetchHistory() {
+  for (const url of historyCandidates()) {
+    try {
+      const ctrl = new AbortController();
+      const timeout = setTimeout(() => ctrl.abort(), 4000);
+      const res = await fetch(url + '?hours=' + HISTORY.hours, { signal: ctrl.signal });
+      clearTimeout(timeout);
+      if (!res.ok) continue;
+      const json = await res.json();
+      if (!Array.isArray(json)) continue;
+      HISTORY.points = json;
+      drawHistory();
+      hideChartEmpty();
+      return;
+    } catch (e) { /* ลอง endpoint ถัดไป */ }
+  }
+  showChartEmpty('ไม่มีข้อมูลประวัติ — ต้องมีข้อมูลจาก backend/คลาวด์');
+}
+
+function setHistoryRange(hours) {
+  HISTORY.hours = hours;
+  document.querySelectorAll('.range-btn').forEach(b => b.classList.toggle('active', +b.dataset.hours === hours));
+  showChartEmpty('⏳ กำลังโหลดประวัติ...');
+  fetchHistory();
+}
+
+function drawHistory() {
+  const canvas = $('history-chart');
+  if (!canvas) return;
+  const pts = HISTORY.points;
+  if (!pts.length) { showChartEmpty('ยังไม่มีข้อมูลในช่วงเวลานี้'); return; }
+
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const w = rect.width;
+  const h = rect.height || 250;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const pad = { top: 18, right: 62, bottom: 26, left: 14 };
+  const plotW = w - pad.left - pad.right;
+  const plotH = h - pad.top - pad.bottom;
+
+  // แกนเวลา — ใช้เวลาจริงของจุดแรก/จุดสุดท้าย
+  const tMin = parseTs(pts[0].timestamp);
+  const tMax = parseTs(pts[pts.length - 1].timestamp);
+  const span = (tMax - tMin) || 1;
+  const x = t => pad.left + ((t - tMin) / span) * plotW;
+
+  // เส้นกริด 4 เส้น + ป้ายเวลา (HH:MM สำหรับ 24 ชม. / DD/MM HH:MM สำหรับช่วงยาว)
+  ctx.strokeStyle = 'rgba(34,197,94,0.10)';
+  ctx.lineWidth = 1;
+  ctx.fillStyle = 'rgba(148,163,184,0.75)';
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  for (let i = 0; i <= 4; i++) {
+    const gx = pad.left + (plotW * i) / 4;
+    ctx.beginPath();
+    ctx.moveTo(gx, pad.top);
+    ctx.lineTo(gx, pad.top + plotH);
+    ctx.stroke();
+    const t = new Date(tMin + (span * i) / 4);
+    const label = HISTORY.hours > 48
+      ? `${t.getDate()}/${t.getMonth() + 1} ${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`
+      : `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
+    ctx.fillText(label, gx, h - 8);
+  }
+
+  // 3 ชุดข้อมูล — แต่ละชุด normalize ด้วย min/max ของตัวเอง (ไม่ปนสเกล)
+  const series = [
+    { key: 'moisture',    color: '#4ade80', conv: v => v },
+    { key: 'temperature', color: '#fb923c', conv: v => v },
+    { key: 'ec',          color: '#22d3ee', conv: v => v / 1000 }  // µS/cm → dS/m
+  ];
+  series.forEach(s => {
+    const vals = pts.map(p => s.conv(p[s.key])).filter(v => v != null && !isNaN(v));
+    if (vals.length < 2) return;
+    const vMin = Math.min(...vals), vMax = Math.max(...vals);
+    const vSpan = (vMax - vMin) || 1;
+    const y = v => pad.top + plotH - ((v - vMin) / vSpan) * plotH;
+
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = 1.8;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    let started = false;
+    pts.forEach((p, i) => {
+      const v = s.conv(p[s.key]);
+      if (v == null || isNaN(v)) return;
+      const px = x(parseTs(p.timestamp));
+      const py = y(v);
+      if (!started) { ctx.moveTo(px, py); started = true; }
+      else ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+
+    // ค่าล่าสุดของแต่ละชุด (ขวาสุด)
+    const lv = s.conv(pts[pts.length - 1][s.key]);
+    if (lv != null && !isNaN(lv)) {
+      ctx.fillStyle = s.color;
+      ctx.font = '600 10px JetBrains Mono, monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(lv.toFixed(1), pad.left + plotW + 6, y(lv) + 4);
+    }
+  });
+}
+
+window.addEventListener('resize', () => {
+  if (HISTORY.points.length) drawHistory();
+});
+
 // ─── Init ─────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   $('ip-badge').textContent = window.location.hostname || 'ESP32';
   syncCropUI();
   startPolling();
+  fetchHistory();
+  HISTORY.timer = setInterval(fetchHistory, 60000);  // กราฟประวัติรีเฟรชทุก 60 วิ
 });
 
 // Reconnect when tab becomes visible

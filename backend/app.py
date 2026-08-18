@@ -8,6 +8,7 @@ Endpoints:
   POST /api/readings  ← ESP32 ส่งค่า (ต้องมี header X-API-Key)
   GET  /api/latest    → ค่าล่าสุดจากฐานข้อมูล
   GET  /data          → alias ของ /api/latest (dashboard เดิมใช้เส้นนี้)
+  GET  /api/history   → ประวัติค่าช่วงเวลา (?hours=24, downsample อัตโนมัติ)
   GET  /health        → ตรวจสถานะ service + ฐานข้อมูล
   GET  /              → เสิร์ฟหน้า dashboard
 """
@@ -223,6 +224,44 @@ def latest():
 def data():
     """alias ของ /api/latest — ใช้กับ dashboard เดิมที่ไม่ต้องแก้เส้นทาง"""
     return latest()
+
+@app.route("/api/history", methods=["GET"])
+def history():
+    """ประวัติค่าจากฐานข้อมูล — ?hours=24 (default) / ?limit=500 (สูงสุด 2000)
+    คืนเป็น array เรียงตามเวลา (เก่า → ใหม่) — downsample อัตโนมัติถ้าจุดข้อมูลเกิน limit"""
+    try:
+        hours = int(request.args.get("hours", 24))
+        limit = int(request.args.get("limit", 500))
+    except ValueError:
+        hours, limit = 24, 500
+    hours = max(1, min(hours, 24 * 30))  # 1 ชม. ถึง 30 วัน
+    limit = max(10, min(limit, 2000))
+
+    try:
+        with get_conn() as conn:
+            if DATABASE_URL:
+                cur = conn.execute(
+                    "SELECT moisture, temperature, ec, ph, n, p, k, valid, created_at "
+                    "FROM readings WHERE created_at >= NOW() - INTERVAL '%s hours' "
+                    "ORDER BY id ASC" % hours
+                )
+            else:
+                cur = conn.execute(
+                    "SELECT moisture, temperature, ec, ph, n, p, k, valid, created_at "
+                    "FROM readings WHERE created_at >= datetime('now', '-%d hours') "
+                    "ORDER BY id ASC" % hours
+                )
+            rows = cur.fetchall()
+    except Exception as e:
+        print("⚠ Query ล้มเหลว:", e)
+        return jsonify({"error": "database unavailable"}), 503
+
+    # downsample — ถ้าจุดข้อมูลเยอะเกิน limit ให้เก็บตัวอย่างกระจาย ๆ แทน
+    if len(rows) > limit:
+        step = len(rows) / limit
+        rows = [rows[int(i * step)] for i in range(limit)]
+
+    return jsonify([row_to_json(r) for r in rows])
 
 
 init_db()

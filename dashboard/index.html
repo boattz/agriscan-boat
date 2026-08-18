@@ -37,7 +37,7 @@
         <div class="header-title">
           <h1>Agriscan</h1>
           <p>Real-time Soil Sensor Dashboard</p>
-          <span class="version-badge">Ⓥ 2.1.0</span>
+          <span class="version-badge">Ⓥ 2.3.0</span>
         </div>
       </div>
 
@@ -246,6 +246,31 @@
           <div class="rec-title">รอรับข้อมูล</div>
           <div class="rec-desc">กำลังดึงข้อมูลจากเซ็นเซอร์...</div>
         </div>
+      </div>
+    </div>
+
+    <!-- ═══ HISTORY CHART ═══ -->
+    <div class="section-title">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M3 3v18h18M7 14l3-3 3 3 5-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      ประวัติข้อมูล
+    </div>
+    <div class="history-card">
+      <div class="history-toolbar">
+        <div class="history-legend">
+          <span class="legend-item" style="--lg:#4ade80;"><i></i>ความชื้น (%)</span>
+          <span class="legend-item" style="--lg:#fb923c;"><i></i>อุณหภูมิ (°C)</span>
+          <span class="legend-item" style="--lg:#22d3ee;"><i></i>EC (dS/m)</span>
+        </div>
+        <div class="history-range">
+          <button class="range-btn active" data-hours="24" onclick="setHistoryRange(24)">24 ชม.</button>
+          <button class="range-btn" data-hours="168" onclick="setHistoryRange(168)">7 วัน</button>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="history-chart" height="250"></canvas>
+        <div class="chart-empty" id="chart-empty">⏳ กำลังโหลดประวัติ...</div>
       </div>
     </div>
 

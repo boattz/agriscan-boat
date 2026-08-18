@@ -12,6 +12,12 @@
 ## [Unreleased]
 - (งานที่ค้างยังไม่ release — ดู git log)
 
+## [2.3.0] — 2026-08-18
+### Added
+- **ระบบประวัติข้อมูล + กราฟ** — endpoint `GET /api/history` (backend/app.py) คืนค่าช่วงเวลา ?hours=24 (default, สูงสุด 30 วัน) / ?limit=500 (สูงสุด 2000), downsample อัตโนมัติ, ใช้ได้ทั้ง PostgreSQL และ SQLite
+- **กราฟประวัติบน dashboard** — วาดด้วย canvas (ไม่พึ่งไลบรารี) แสดงแนวโน้มความชื้น/อุณหภูมิ/EC ย้อนหลัง เลือกช่วง 24 ชม./7 วัน, อัปเดตทุก 60 วิ, รองรับทั้ง dashboard/ และฝังใน ESP32 (dashboard.h)
+- ป้ายเวอร์ชัน Ⓥ 2.3.0 (index.html + ฝัง dashboard.h)
+
 ## [2.2.0] — 2026-08-15
 ### Changed
 - **UI ใหญ่ขึ้นอ่านง่ายทั้งระบบ** — ตัวเลขการ์ด (card-value) ~2.6→3.6rem, ฟอนต์/ป้าย/padding/gap อัปทั่ว, แถบความชื้น 8→12px, แถบ NPK 6→10px, select พืช 0.82→1rem — CSS-only ไม่เปลี่ยน logic/สี/โครงสร้าง
@@ -59,5 +65,4 @@
 ---
 
 ## อ้างอิงงานค้าง
-- `dashboard/script.js` ยังมี diff ค้างไม่ commit (งานก่อนหน้า)
-- branch `agents/plant-criteria-research-thai` + worktree `agriscan-v2.worktrees/` — งานวิจัยเกณฑ์พืชที่ยังค้าง
+- (ว่าง — งานค้างก่อนหน้าทั้งหมดปิดแล้ว: ระบบประวัติ/กราฟ 2.3.0 commit เรียบร้อย, branch วิจัยเกณฑ์พืช `agents/plant-criteria-research-thai` ยุบแล้ว)
