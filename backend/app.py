@@ -177,7 +177,7 @@ def row_to_json(row):
 def get_setting(key, default=None):
     try:
         with get_conn() as conn:
-            cur = conn.execute("SELECT value FROM settings WHERE key = ?", (key,))
+            cur = conn.execute("SELECT value FROM settings WHERE key = " + PARAM, (key,))
             row = cur.fetchone()
         return row["value"] if row is not None else default
     except Exception as e:
@@ -189,7 +189,7 @@ def set_setting(key, value):
     try:
         with get_conn() as conn:
             conn.execute(
-                "INSERT INTO settings (key, value) VALUES (?, ?) "
+                "INSERT INTO settings (key, value) VALUES (" + PARAM + ", " + PARAM + ") "
                 "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
                 (key, str(value)),
             )
