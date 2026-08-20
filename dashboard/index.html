@@ -258,14 +258,12 @@
     </div>
     <div class="history-card">
       <div class="history-toolbar">
-        <div class="history-legend">
-          <span class="legend-item" style="--lg:#4ade80;"><i></i>ความชื้น (%)</span>
-          <span class="legend-item" style="--lg:#fb923c;"><i></i>อุณหภูมิ (°C)</span>
-          <span class="legend-item" style="--lg:#22d3ee;"><i></i>EC (dS/m)</span>
-          <span class="legend-item" style="--lg:#a855f7;"><i></i>pH</span>
-          <span class="legend-item" style="--lg:#f472b6;"><i></i>N (mg/kg)</span>
-          <span class="legend-item" style="--lg:#fbbf24;"><i></i>P (mg/kg)</span>
-          <span class="legend-item" style="--lg:#60a5fa;"><i></i>K (mg/kg)</span>
+        <div class="history-legend" id="metric-btns">
+          <button type="button" class="metric-btn active" data-metric="moisture" onclick="setChartMetric('moisture')"><i style="--lg:#4ade80;"></i>ความชื้น (%)</button>
+          <button type="button" class="metric-btn" data-metric="temperature" onclick="setChartMetric('temperature')"><i style="--lg:#fb923c;"></i>อุณหภูมิ (°C)</button>
+          <button type="button" class="metric-btn" data-metric="ec" onclick="setChartMetric('ec')"><i style="--lg:#22d3ee;"></i>EC (dS/m)</button>
+          <button type="button" class="metric-btn" data-metric="ph" onclick="setChartMetric('ph')"><i style="--lg:#a855f7;"></i>pH</button>
+          <button type="button" class="metric-btn" data-metric="npk" onclick="setChartMetric('npk')"><i style="--lg:#f472b6; background:linear-gradient(90deg,#f472b6 25%,#fbbf24 25% 50%,#60a5fa 50%);"></i>N·P·K (mg/kg)</button>
         </div>
         <div class="history-range">
           <button class="range-btn active" data-hours="24" onclick="setHistoryRange(24)">24 ชม.</button>

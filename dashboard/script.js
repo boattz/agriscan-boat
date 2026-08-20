@@ -433,7 +433,35 @@ function startPolling() {
 }
 
 // ─── History chart (canvas — ไม่พึ่งไลบรารี) ──────────────
-const HISTORY = { hours: 24, timer: null, points: [] };
+const HISTORY = { hours: 24, timer: null, points: [], metric: 'moisture' };
+
+// กราฟเลือกดูทีละค่า (ปุ่มสลับด้านบน) — กราฟใหญ่เต็มความสูง อ่านง่ายกว่าแผงย่อย
+const METRICS = {
+  moisture:    { title: 'ความชื้น (%)', min: 0, max: 100, fmt: v => String(Math.round(v)),
+                 lines: [{ key: 'moisture', color: '#4ade80' }] },
+  temperature: { title: 'อุณหภูมิ (°C)', auto: true,
+                 lines: [{ key: 'temperature', color: '#fb923c' }] },
+  ec:          { title: 'EC (dS/m)', auto: true,
+                 lines: [{ key: 'ec', color: '#22d3ee', conv: v => (v == null ? null : v / 1000) }] },
+  ph:          { title: 'pH', min: 3, max: 9, fmt: v => v.toFixed(1),
+                 lines: [{ key: 'ph', color: '#a855f7' }] },
+  npk:         { title: 'N·P·K (mg/kg)', auto: true, zero: true,
+                 lines: [
+                   { key: 'n', color: '#f472b6', lbl: 'N' },
+                   { key: 'p', color: '#fbbf24', lbl: 'P' },
+                   { key: 'k', color: '#60a5fa', lbl: 'K' },
+                 ] },
+};
+
+let lastDraw = null;   // สถานะกราฟล่าสุด — ใช้ตอน hover หาจุดใกล้สุด
+
+function setChartMetric(m) {
+  if (!METRICS[m]) return;
+  HISTORY.metric = m;
+  document.querySelectorAll('.metric-btn').forEach(b => b.classList.toggle('active', b.dataset.metric === m));
+  hideChartEmpty();
+  drawHistory();
+}
 
 function historyCandidates() {
   const out = [];
@@ -493,67 +521,51 @@ function drawHistory() {
   const canvas = $('history-chart');
   if (!canvas) return;
   const pts = HISTORY.points;
+  const m = METRICS[HISTORY.metric] || METRICS.moisture;
   if (!pts.length) { showChartEmpty('ยังไม่มีข้อมูลในช่วงเวลานี้'); return; }
 
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.parentElement.getBoundingClientRect();
   const w = rect.width;
-  const h = rect.height || 250;
+  const h = rect.height || 420;
   canvas.width = w * dpr;
   canvas.height = h * dpr;
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
 
-  // ── แผนผัง: 5 แผง แยกตามหน่วย — แต่ละแผงมีแกน y + สเกลของตัวเอง ──
-  const pad = { top: 6, right: 56, bottom: 24, left: 48 };
-  const TITLE_H = 18;   // ที่ว่างสำหรับชื่อแผงด้านบน
-  const GAP = 10;       // ช่องว่างระหว่างแผง
-  const panels = [
-    { title: 'ความชื้น (%)', min: 0, max: 100, fmt: v => String(Math.round(v)),
-      lines: [{ key: 'moisture', color: '#4ade80' }] },
-    { title: 'อุณหภูมิ (°C)', auto: true,
-      lines: [{ key: 'temperature', color: '#fb923c' }] },
-    { title: 'EC (dS/m)', auto: true,
-      lines: [{ key: 'ec', color: '#22d3ee', conv: v => (v == null ? null : v / 1000) }] },
-    { title: 'pH', min: 3, max: 9, fmt: v => v.toFixed(1),
-      lines: [{ key: 'ph', color: '#a855f7' }] },
-    { title: 'N·P·K (mg/kg)', auto: true, zero: true,
-      lines: [
-        { key: 'n', color: '#f472b6', lbl: 'N' },
-        { key: 'p', color: '#fbbf24', lbl: 'P' },
-        { key: 'k', color: '#60a5fa', lbl: 'K' },
-      ] },
-  ];
-
+  // ── กราฟค่าที่เลือก (สูงเต็มที่ — สลับจากปุ่มด้านบน) ──
+  const pad = { top: 20, right: 66, bottom: 30, left: 54 };
   const plotW = w - pad.left - pad.right;
-  const panelH = (h - pad.top - pad.bottom - TITLE_H * panels.length - GAP * (panels.length - 1)) / panels.length;
-  const plotY = i => pad.top + i * (TITLE_H + panelH + GAP) + TITLE_H;
-  const plotBottom = plotY(panels.length - 1) + panelH;
+  const plotH = h - pad.top - pad.bottom;
+  const plotBottom = pad.top + plotH;
 
-  // แกนเวลา — ใช้เวลาจริงของจุดแรก/จุดสุดท้าย
   const tMin = parseTs(pts[0].timestamp);
   const tMax = parseTs(pts[pts.length - 1].timestamp);
   const span = (tMax - tMin) || 1;
   const x = t => pad.left + ((t - tMin) / span) * plotW;
 
-  // เส้นกริดแนวตั้ง 4 เส้น ลากผ่านทุกแผง + ป้ายเวลา (วาดที่แถวล่างสุด)
-  ctx.strokeStyle = 'rgba(34,197,94,0.10)';
-  ctx.lineWidth = 1;
-  ctx.fillStyle = 'rgba(148,163,184,0.75)';
-  ctx.font = '10px JetBrains Mono, monospace';
-  ctx.textAlign = 'center';
-  for (let i = 0; i <= 4; i++) {
-    const gx = pad.left + (plotW * i) / 4;
-    ctx.beginPath();
-    ctx.moveTo(gx, pad.top);
-    ctx.lineTo(gx, plotBottom);
-    ctx.stroke();
-    const t = new Date(tMin + (span * i) / 4);
-    const label = HISTORY.hours > 48
-      ? `${t.getDate()}/${t.getMonth() + 1} ${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`
-      : `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
-    ctx.fillText(label, gx, h - 8);
+  // ช่วงสเกลของค่านั้น (ค่าคงที่ หรือคำนวณจากข้อมูล ถ้า auto)
+  let rng;
+  if (m.min != null && m.max != null) {
+    rng = { min: m.min, max: m.max };
+  } else {
+    const vals = [];
+    m.lines.forEach(ln => pts.forEach(pt => {
+      const v = (ln.conv || (v => v))(pt[ln.key]);
+      if (v != null && !isNaN(v)) vals.push(v);
+    }));
+    if (vals.length < 2) rng = null;
+    else {
+      let mn = Math.min(...vals), mx = Math.max(...vals);
+      if (m.zero) mn = Math.min(mn, 0);
+      const sp = (mx - mn) || 1;
+      mn -= sp * 0.08; mx += sp * 0.08;   // เผื่อขอบบน/ล่าง
+      rng = { min: mn, max: mx };
+    }
   }
+  if (!rng) { showChartEmpty('ไม่มีข้อมูลของค่านี้ในช่วงเวลาที่เลือก'); return; }
+  const vSpan = (rng.max - rng.min) || 1;
+  const y = v => pad.top + plotH - ((v - rng.min) / vSpan) * plotH;
 
   const fmt = (v, p) => {
     if (p && p.fmt) return p.fmt(v);
@@ -562,94 +574,148 @@ function drawHistory() {
     return a >= 100 ? v.toFixed(0) : a >= 1 ? v.toFixed(1) : v.toFixed(2);
   };
 
-  panels.forEach((p, i) => {
-    const yTop = plotY(i);
+  // เส้นกริดแนวตั้ง 4 เส้น + ป้ายเวลาที่แถวล่าง
+  ctx.strokeStyle = 'rgba(34,197,94,0.10)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const gx = pad.left + (plotW * i) / 4;
+    ctx.beginPath();
+    ctx.moveTo(gx, pad.top);
+    ctx.lineTo(gx, plotBottom);
+    ctx.stroke();
+  }
+  ctx.fillStyle = 'rgba(148,163,184,0.75)';
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.textAlign = 'center';
+  for (let i = 0; i <= 4; i++) {
+    const gx = pad.left + (plotW * i) / 4;
+    const t = new Date(tMin + (span * i) / 4);
+    const label = HISTORY.hours > 48
+      ? `${t.getDate()}/${t.getMonth() + 1} ${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`
+      : `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
+    ctx.fillText(label, gx, h - 8);
+  }
 
-    // วงสี + ชื่อแผง
-    ctx.textAlign = 'left';
-    ctx.font = '600 10px JetBrains Mono, monospace';
-    p.lines.forEach(ln => {
-      ctx.fillStyle = ln.color;
-      ctx.beginPath();
-      ctx.arc(pad.left + 5, yTop - 11, 3, 0, Math.PI * 2);
-      ctx.fill();
-    });
-    ctx.fillStyle = 'rgba(148,163,184,0.85)';
-    ctx.fillText(p.title, pad.left + 13, yTop - 8);
+  // แกน y: 5 ระดับ + เส้นกริดแนวนอน
+  ctx.textAlign = 'right';
+  for (let k = 0; k <= 4; k++) {
+    const v = rng.min + (vSpan * k) / 4;
+    const gy = y(v);
+    ctx.strokeStyle = 'rgba(148,163,184,0.16)';
+    ctx.beginPath();
+    ctx.moveTo(pad.left, gy);
+    ctx.lineTo(pad.left + plotW, gy);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(148,163,184,0.6)';
+    ctx.font = '10px JetBrains Mono, monospace';
+    ctx.fillText(fmt(v, m), pad.left - 8, gy + 3);
+  }
 
-    // ช่วงสเกลของแผงนี้ (ค่าคงที่ หรือคำนวณจากข้อมูล ถ้า auto)
-    let rng;
-    if (p.min != null && p.max != null) {
-      rng = { min: p.min, max: p.max };
-    } else {
-      const vals = [];
-      p.lines.forEach(ln => pts.forEach(pt => {
-        const v = (ln.conv || (v => v))(pt[ln.key]);
-        if (v != null && !isNaN(v)) vals.push(v);
-      }));
-      if (vals.length < 2) rng = null;
-      else {
-        let mn = Math.min(...vals), mx = Math.max(...vals);
-        if (p.zero) mn = Math.min(mn, 0);
-        const sp = (mx - mn) || 1;
-        mn -= sp * 0.08; mx += sp * 0.08;   // เผื่อขอบบน/ล่าง
-        rng = { min: mn, max: mx };
-      }
-    }
-    if (!rng) {
-      ctx.fillStyle = 'rgba(148,163,184,0.5)';
-      ctx.font = '10px JetBrains Mono, monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('ไม่มีข้อมูล', pad.left + plotW / 2, yTop + panelH / 2 + 3);
-      return;
-    }
-    const vSpan = (rng.max - rng.min) || 1;
-    const y = v => yTop + panelH - ((v - rng.min) / vSpan) * panelH;
-
-    // แกน y: 3 ระดับ (ล่าง/กลาง/บน) + เส้นกริดแนวนอน
-    ctx.textAlign = 'right';
-    for (let k = 0; k <= 2; k++) {
-      const v = rng.min + (vSpan * k) / 2;
-      const gy = y(v);
-      ctx.strokeStyle = 'rgba(148,163,184,0.16)';
-      ctx.beginPath();
-      ctx.moveTo(pad.left, gy);
-      ctx.lineTo(pad.left + plotW, gy);
-      ctx.stroke();
-      ctx.fillStyle = 'rgba(148,163,184,0.6)';
-      ctx.font = '9px JetBrains Mono, monospace';
-      ctx.fillText(fmt(v, p), pad.left - 6, gy + 3);
-    }
-
-    // เส้นข้อมูลของแผงนี้
-    p.lines.forEach(ln => {
-      const conv = ln.conv || (v => v);
-      let started = false;
-      let lastV = null, lastY = null;
-      ctx.strokeStyle = ln.color;
-      ctx.lineWidth = 1.8;
-      ctx.lineJoin = 'round';
-      ctx.beginPath();
-      pts.forEach(pt => {
-        const v = conv(pt[ln.key]);
-        if (v == null || isNaN(v)) { started = false; return; }
-        const px = x(parseTs(pt.timestamp));
-        const py = y(v);
-        if (!started) { ctx.moveTo(px, py); started = true; }
-        else ctx.lineTo(px, py);
-        lastV = v; lastY = py;
-      });
-      ctx.stroke();
-
-      // ค่าล่าสุดติดขอบขวาของแผง (ไม่ซ้อนกัน เพราะอยู่คนละแผง)
-      if (lastV != null) {
-        ctx.fillStyle = ln.color;
-        ctx.font = '600 10px JetBrains Mono, monospace';
-        ctx.textAlign = 'left';
-        ctx.fillText((ln.lbl ? ln.lbl + ' ' : '') + fmt(lastV, p), pad.left + plotW + 6, lastY + 4);
-      }
-    });
+  // ชื่อกราฟ (บนซ้าย)
+  ctx.textAlign = 'left';
+  ctx.font = '600 11px JetBrains Mono, monospace';
+  m.lines.forEach(ln => {
+    ctx.fillStyle = ln.color;
+    ctx.beginPath();
+    ctx.arc(pad.left + 5, pad.top - 8, 3.5, 0, Math.PI * 2);
+    ctx.fill();
   });
+  ctx.fillStyle = 'rgba(148,163,184,0.9)';
+  ctx.fillText(m.title, pad.left + 14, pad.top - 5);
+
+  // เส้นข้อมูลของค่านี้
+  m.lines.forEach(ln => {
+    const conv = ln.conv || (v => v);
+    let started = false;
+    let lastV = null, lastY = null;
+    ctx.strokeStyle = ln.color;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    pts.forEach(pt => {
+      const v = conv(pt[ln.key]);
+      if (v == null || isNaN(v)) { started = false; return; }
+      const px = x(parseTs(pt.timestamp));
+      const py = y(v);
+      if (!started) { ctx.moveTo(px, py); started = true; }
+      else ctx.lineTo(px, py);
+      lastV = v; lastY = py;
+    });
+    ctx.stroke();
+
+    // ค่าล่าสุดติดขอบขวา
+    if (lastV != null) {
+      ctx.fillStyle = ln.color;
+      ctx.font = '600 11px JetBrains Mono, monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText((ln.lbl ? ln.lbl + ' ' : '') + fmt(lastV, m), pad.left + plotW + 8, lastY + 4);
+    }
+  });
+
+  lastDraw = { pts, m, pad, plotW, plotH, tMin, span, rng };
+}
+
+// ── Hover/แตะ: ลากเส้นตั้ง + แสดงค่า-เวลา ณ จุดใกล้สุด ──
+function fmtTime(s) {
+  const t = new Date(parseTs(s));
+  if (isNaN(t)) return '';
+  return `${t.getDate()}/${t.getMonth() + 1} ${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
+}
+
+function nearestPoint(ev, canvas) {
+  const d = lastDraw;
+  const rect = canvas.getBoundingClientRect();
+  const mx = (ev.touches ? ev.touches[0].clientX : ev.clientX) - rect.left;
+  if (mx < d.pad.left || mx > d.pad.left + d.plotW) return null;
+  const frac = (mx - d.pad.left) / d.plotW;
+  const i = Math.round(frac * (d.pts.length - 1));
+  return Math.max(0, Math.min(d.pts.length - 1, i));
+}
+
+function chartHover(ev) {
+  const canvas = $('history-chart');
+  if (!canvas || !lastDraw || !lastDraw.pts.length) return;
+  const idx = nearestPoint(ev, canvas);
+  drawHistory();   // วาดใหม่ทั้งกราฟ แล้วค่อยทับตัวอ่านค่า
+  if (idx == null) return;
+  const d = lastDraw;
+  const pt = d.pts[idx];
+  const ctx = canvas.getContext('2d');
+  const px = d.pad.left + ((parseTs(pt.timestamp) - d.tMin) / d.span) * d.plotW;
+
+  ctx.strokeStyle = 'rgba(148,163,184,0.45)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath();
+  ctx.moveTo(px, d.pad.top);
+  ctx.lineTo(px, d.pad.top + d.plotH);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  const fmt2 = (v, p) => p && p.fmt ? p.fmt(v) : (Number.isInteger(v) ? String(v) : (Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 1 ? v.toFixed(1) : v.toFixed(2)));
+  const parts = [];
+  d.m.lines.forEach(ln => {
+    const conv = ln.conv || (v => v);
+    const v = conv(pt[ln.key]);
+    if (v == null || isNaN(v)) return;
+    const py = d.pad.top + d.plotH - ((v - d.rng.min) / ((d.rng.max - d.rng.min) || 1)) * d.plotH;
+    ctx.fillStyle = ln.color;
+    ctx.beginPath();
+    ctx.arc(px, py, 4, 0, Math.PI * 2);
+    ctx.fill();
+    parts.push((ln.lbl || d.m.title.split(' (')[0]) + ' ' + fmt2(v, d.m));
+  });
+  if (!parts.length) return;
+
+  const info = fmtTime(pt.timestamp) + ' · ' + parts.join('  ');
+  ctx.font = '600 11px JetBrains Mono, monospace';
+  ctx.textAlign = 'left';
+  const tw = (ctx.measureText ? ctx.measureText(info).width : info.length * 7) + 16;
+  const bx = Math.min(d.pad.left + d.plotW - tw, d.pad.left + 8);
+  ctx.fillStyle = 'rgba(2,6,23,0.92)';
+  ctx.fillRect(bx, d.pad.top - 16, tw, 18);
+  ctx.fillStyle = '#e2e8f0';
+  ctx.fillText(info, bx + 8, d.pad.top - 3);
 }
 
 window.addEventListener('resize', () => {
@@ -663,6 +729,13 @@ window.addEventListener('DOMContentLoaded', () => {
   startPolling();
   fetchHistory();
   HISTORY.timer = setInterval(fetchHistory, 60000);  // กราฟประวัติรีเฟรชทุก 60 วิ (ไม่ต้องถี่เท่าค่าปัจจุบัน)
+  const ch = $('history-chart');
+  if (ch) {
+    ch.addEventListener('mousemove', chartHover);
+    ch.addEventListener('mouseleave', () => { if (HISTORY.points.length) drawHistory(); });
+    ch.addEventListener('touchstart', chartHover, { passive: true });
+    ch.addEventListener('touchmove', chartHover, { passive: true });
+  }
 });
 
 // Reconnect when tab becomes visible
