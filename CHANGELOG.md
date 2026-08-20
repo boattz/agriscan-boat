@@ -9,6 +9,11 @@
 
 ---
 
+## [2.4.4] — 2026-08-20
+### Changed
+- **ย้ายอ้างอิงคลาวด์จาก `agriscan-v2` → `agriscan-boat`** — บริการ Render ตัวจริงตอนนี้คือ `https://agriscan-boat.onrender.com` (สร้างจาก render.yaml) — อัปเดตทุกจุด: `CONFIG.cloudApiUrl` ใน dashboard/script.js, `DEFAULT_CLOUD_URL` ใน ESP32 (agriscan.ino) → `https://agriscan-boat.onrender.com/api/readings`, README/presentation/code-guide
+  - หมายเหตุ: บริการเก่า `agriscan-v2.onrender.com` ยังเปิดอยู่ — ถ้า ESP32 เคยตั้ง Cloud URL ไว้ใน NVS ผ่านหน้า /config ค่า NVS ชนะค่าเริ่มต้น → **ต้องอัปเดตที่ /config ด้วย** (หรือกดปุ่ม "ล้างค่า" ให้กลับไปใช้ค่าเริ่มต้นใหม่)
+
 ## [2.4.3] — 2026-08-20
 ### Fixed
 - **ข้อความสถานะกราฟ (ว่าง/โหลด/error) มองไม่เห็น** — `.chart-empty` เคยใช้สี `--text-muted` (#4e7860) มืดทึบบนพื้นการ์ดเขียวเข้ม → เปลี่ยนเป็น `--text-secondary` (#93c9a5) + ฟอนต์ใหญ่ขึ้นเล็กน้อย (0.95rem) — ข้อความ "กำลังโหลดประวัติ… / ยังไม่มีข้อมูล… / ไม่มีข้อมูลประวัติ…" อ่านชัด

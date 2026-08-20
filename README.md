@@ -59,7 +59,7 @@ backend/
 
 1. **Push โค้ดนี้ขึ้น GitHub** แล้วนำเข้าใน [Render.com](https://render.com) (New → Blueprint)
 2. Render จะอ่าน `render.yaml` อัตโนมัติ สร้างให้ครบ: **Web Service + PostgreSQL (free tier)** + สุ่มค่า `API_KEY`
-3. เปิด URL ที่ได้ เช่น `https://agriscan-v2.onrender.com/` — จะเห็นหน้า dashboard
+3. เปิด URL ที่ได้ เช่น `https://agriscan-boat.onrender.com/` — จะเห็นหน้า dashboard
 4. คัดลอกค่า **API_KEY** จาก Render Dashboard → Environment
 
 ### ตั้งค่า ESP32 ให้ส่งค่าขึ้นคลาวด์

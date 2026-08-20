@@ -955,7 +955,7 @@ body::after {
         <div class="header-title">
           <h1>Agriscan</h1>
           <p>Real-time Soil Sensor Dashboard</p>
-          <span class="version-badge">Ⓥ 2.4.3</span>
+          <span class="version-badge">Ⓥ 2.4.4</span>
         </div>
       </div>
 
@@ -1418,7 +1418,7 @@ const CONFIG = {
   retryDelay:   3000,
   useMockOnFail: false,   // ไม่มี mock data — แสดงข้อมูลจริงเท่านั้น
   // URL ของ backend บน Render
-  cloudApiUrl:  'https://agriscan-v2.onrender.com',
+  cloudApiUrl:  'https://agriscan-boat.onrender.com',
   // ถ้าข้อมูลเก่ากว่านี้ (ms) ให้ถือว่า ESP32 ไม่ได้ออนไลน์อยู่ → ขึ้นสถานะ "ข้อมูลเก่า"
   staleAfter:   30000
 };

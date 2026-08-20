@@ -24,7 +24,7 @@
 
 // ── Cloud Upload ───────────────────────────────────────────
 // URL เริ่มต้นของ backend (Render) — เปลี่ยนได้ผ่านหน้า /config
-const char* DEFAULT_CLOUD_URL = "https://agriscan-v2.onrender.com/api/readings";
+const char* DEFAULT_CLOUD_URL = "https://agriscan-boat.onrender.com/api/readings";
 // API key เริ่มต้นอยู่ใน secrets.h (ดูจาก Render Dashboard → Environment → API_KEY)
 // ความถี่ส่งข้อมูลขึ้นคลาวด์ (มิลลิวินาที) — 3,000 = ทุก 3 วินาที
 #define POST_INTERVAL_MS   3000
