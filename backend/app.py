@@ -18,10 +18,11 @@ Endpoints:
 import json
 import os
 import sqlite3
+import threading
 import time
 import urllib.error
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
@@ -59,6 +60,11 @@ LINE_USER_ID = os.environ.get("LINE_USER_ID", "")
 # กันส่งซ้ำถี่เกินไป: ข้ามการแจ้งเตือนหัวข้อเดิมถ้าเพิ่งส่งไปภายในกี่นาที
 LINE_COOLDOWN_MIN = int(os.environ.get("LINE_COOLDOWN_MIN", "60"))
 _alert_last_sent = {}   # key (เช่น "moisture_low") -> timestamp วินาที
+
+# ── ตรวจ ESP32 ไม่ออนไลน์ ──────────────────────────────────
+# ไม่มีค่าจาก ESP32 เข้ามาเกินกี่นาที → ส่ง LINE แจ้ง (ครั้งเดียวต่อรอบ จนกว่าจะกลับมา)
+# ตั้ง 0 = ปิดการแจ้งเตือนนี้
+OFFLINE_ALERT_MIN = int(os.environ.get("OFFLINE_ALERT_MIN", "10"))
 
 app = Flask(__name__)
 CORS(app)
@@ -238,6 +244,35 @@ def line_push(message):
         return False
 
 
+def _offline_watch():
+    """เช็คทุก 60 วินาที: ค่าล่าสุดจาก ESP32 เก่าเกิน OFFLINE_ALERT_MIN → LINE แจ้ง
+    (ครั้งเดียวต่อรอบ — ตั้ง flag ก่อนส่ง กัน thread สองตัวส่งซ้ำ)"""
+    while True:
+        time.sleep(60)
+        try:
+            last = get_setting("last_reading_at")
+            if not last:
+                continue   # ยังไม่เคยมีข้อมูล — ไม่แจ้ง
+            try:
+                last_dt = datetime.fromisoformat(last)
+            except ValueError:
+                continue
+            if (datetime.now(timezone.utc) - last_dt).total_seconds() < OFFLINE_ALERT_MIN * 60:
+                continue   # ยังอยู่ในช่วงปกติ
+            if get_setting("esp_offline_alerted", "0") == "1":
+                continue   # แจ้งไปแล้วรอบนี้
+            set_setting("esp_offline_alerted", "1")
+            line_push(
+                f"🌱 Agriscan — แจ้งเตือนระบบ\n"
+                f"⚠️ ไม่ได้รับค่าจากเซ็นเซอร์เกิน {OFFLINE_ALERT_MIN} นาที "
+                f"(ค่าล่าสุด: {last_dt.strftime('%d/%m/%Y %H:%M')} UTC)\n"
+                f"ตรวจ: ไฟเลี้ยง ESP32 / WiFi / ตัวเซ็นเซอร์\n"
+                f"เวลา: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+            )
+        except Exception as e:
+            print("[WARN] ตรวจ ESP32 ไม่ออนไลน์ล้มเหลว:", e)
+
+
 def evaluate_alerts(row):
     """เทียบค่าล่าสุดกับเกณฑ์ของพืชที่เลือก (ค่าเดียวกับ crops.js ผ่าน crop_criteria.py)
     ส่งแจ้งเตือนผ่าน Line (Messaging API) เมื่อค่าเกินเกณฑ์ — ใช้ cooldown
@@ -346,6 +381,28 @@ def add_reading():
     except Exception as e:
         print("⚠ evaluate_alerts ล้มเหลว:", e)
 
+    # จำเวลารับค่าล่าสุด (ใช้ตรวจ ESP32 ไม่ออนไลน์) + ถ้าเคยแจ้ง "ไม่ออนไลน์" ไว้ → บอกกลับมาออนไลน์
+    try:
+        with get_conn() as conn:
+            cur = conn.execute("SELECT value FROM settings WHERE key = 'esp_offline_alerted'")
+            row2 = cur.fetchone()
+            was_offline = row2 is not None and row2["value"] == "1"
+            conn.execute(
+                "INSERT INTO settings (key, value) VALUES (" + PARAM + ", " + PARAM + ") "
+                "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                ("last_reading_at", datetime.now(timezone.utc).isoformat()),
+            )
+            conn.execute(
+                "INSERT INTO settings (key, value) VALUES ('esp_offline_alerted', '0') "
+                "ON CONFLICT(key) DO UPDATE SET value = '0'"
+            )
+            conn.commit()
+        if was_offline:
+            ts = datetime.now().strftime("%d/%m/%Y %H:%M")
+            line_push(f"🌱 Agriscan — ระบบ\n✅ ESP32 กลับมาออนไลน์แล้ว — รับค่าปกติอีกครั้ง\nเวลา: {ts}")
+    except Exception as e:
+        print("[WARN] บันทึก last_reading_at ล้มเหลว:", e)
+
     # ลบข้อมูลเก่าเป็นระยะ ๆ (ทุก CLEANUP_EVERY ครั้งที่รับค่า) — กัน DB เต็ม
     global _cleanup_counter
     _cleanup_counter += 1
@@ -441,6 +498,10 @@ def history():
 
 init_db()
 cleanup_old_readings()  # ลบทิ้งข้อมูลเก่าครั้งแรกตอน service เริ่ม
+
+# ตัวเฝ้าดู ESP32 ไม่ออนไลน์ (ปิดได้ด้วย OFFLINE_ALERT_MIN=0)
+if OFFLINE_ALERT_MIN > 0:
+    threading.Thread(target=_offline_watch, daemon=True).start()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))

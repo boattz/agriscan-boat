@@ -15,6 +15,8 @@ services:
         sync: false
       - key: LINE_USER_ID
         sync: false
+      - key: OFFLINE_ALERT_MIN
+        sync: false
       - key: DATABASE_URL
         fromDatabase:
           name: agriscan-db

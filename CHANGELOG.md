@@ -9,6 +9,11 @@
 
 ---
 
+## [2.5.0] — 2026-08-20
+### Added
+- **🔴 แจ้งเตือน LINE เมื่อ ESP32 ไม่ออนไลน์** — ไม่มีค่าจากเซ็นเซอร์เข้าระบบเกินเวลาที่ตั้ง → ส่ง LINE เตือน "ตรวจไฟเลี้ยง/WiFi/เซ็นเซอร์" ครั้งเดียวต่อรอบ; พอค่ากลับมาเข้า → แจ้ง "กลับมาออนไลน์แล้ว" — ตั้ง `OFFLINE_ALERT_MIN` (นาที, default 10, ตั้ง 0 = ปิด) ใน render.yaml (`sync: false`) — ใช้ค่า `last_reading_at` + flag ในตาราง settings กันส่งซ้ำ/กันหลงหลัง restart, worker thread ตรวจทุก 60 วิ
+  - หมายเหตุ: Render free tier หลับเมื่อไม่มี request — thread ตรวจได้เฉพาะเวลาตัว service ตื่น (เช่น มีคนเปิด dashboard ค้างไว้) — alert ไม่รับประกันแบบ realtime 100% บน free
+
 ## [2.4.4] — 2026-08-20
 ### Changed
 - **ย้ายอ้างอิงคลาวด์จาก `agriscan-v2` → `agriscan-boat`** — บริการ Render ตัวจริงตอนนี้คือ `https://agriscan-boat.onrender.com` (สร้างจาก render.yaml) — อัปเดตทุกจุด: `CONFIG.cloudApiUrl` ใน dashboard/script.js, `DEFAULT_CLOUD_URL` ใน ESP32 (agriscan.ino) → `https://agriscan-boat.onrender.com/api/readings`, README/presentation/code-guide
