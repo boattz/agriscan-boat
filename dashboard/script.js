@@ -29,8 +29,23 @@ function changeCrop(key) {
   if (!CROP_CRITERIA[key]) key = 'other';
   localStorage.setItem(CROP_KEY, key);
   syncCropUI();
+  pushCropToCloud(key);   // บอก backend ด้วย — ใช้ประเมินการแจ้งเตือน (Line Messaging API)
   // Re-evaluate with latest data if we have it
   if (state.data) updateUI(state.data);
+}
+
+// ─── ส่งชนิดพืชที่เลือกไป backend (GET/POST /api/crop) ───
+// backend เก็บ "crop ปัจจุบัน" ไว้ใช้ประเมินการแจ้งเตือน Line — ข้อมูลนี้อยู่ฝั่ง
+// dashboard เท่านั้น (localStorage) backend ไม่รู้เอง
+function pushCropToCloud(key) {
+  let base = state.activeApiUrl || window.location.origin;
+  base = String(base).replace(/\/data$/, '').replace(/\/+$/, '');
+  if (!/^https?:/i.test(base)) return;   // เปิดจาก file:// — ไม่มี backend
+  fetch(base + '/api/crop', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ crop: key })
+  }).catch(() => {});   // offline — ข้ามเงียบ ๆ
 }
 
 function syncCropUI() {
@@ -518,11 +533,15 @@ function drawHistory() {
     ctx.fillText(label, gx, h - 8);
   }
 
-  // 3 ชุดข้อมูล — แต่ละชุด normalize ด้วย min/max ของตัวเอง (ไม่ปนสเกล)
+  // 7 ชุดข้อมูล — แต่ละชุด normalize ด้วย min/max ของตัวเอง (ไม่ปนสเกล)
   const series = [
     { key: 'moisture',    color: '#4ade80', conv: v => v },
     { key: 'temperature', color: '#fb923c', conv: v => v },
-    { key: 'ec',          color: '#22d3ee', conv: v => v / 1000 }  // µS/cm → dS/m
+    { key: 'ec',          color: '#22d3ee', conv: v => v / 1000 },  // µS/cm → dS/m
+    { key: 'ph',          color: '#a855f7', conv: v => v },
+    { key: 'n',           color: '#f472b6', conv: v => v },
+    { key: 'p',           color: '#fbbf24', conv: v => v },
+    { key: 'k',           color: '#60a5fa', conv: v => v }
   ];
   series.forEach(s => {
     const vals = pts.map(p => s.conv(p[s.key])).filter(v => v != null && !isNaN(v));
@@ -564,6 +583,7 @@ window.addEventListener('resize', () => {
 // ─── Init ─────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
   syncCropUI();
+  pushCropToCloud(getCropKey());   // แจ้ง backend ตั้งแต่เปิดหน้า — เผื่อเปลี่ยนตอน offline
   startPolling();
   fetchHistory();
   HISTORY.timer = setInterval(fetchHistory, 60000);  // กราฟประวัติรีเฟรชทุก 60 วิ (ไม่ต้องถี่เท่าค่าปัจจุบัน)

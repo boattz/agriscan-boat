@@ -442,7 +442,7 @@
 
   <!-- ═══════════ HERO ═══════════ -->
   <header class="hero reveal">
-    <span class="eyebrow">● เอกสารประกอบการนำเสนอโปรเจกต์ — ฉบับสมบูรณ์ · Ⓥ 2.3.0</span>
+    <span class="eyebrow">● เอกสารประกอบการนำเสนอโปรเจกต์ — ฉบับสมบูรณ์ · Ⓥ 2.4.0</span>
     <h1>Agriscan<br /><span class="grad">ระบบ IoT ตรวจวัดค่าดินแบบ Real-time</span></h1>
     <p class="lead">
       ระบบอ่านค่าคุณภาพดิน 7 อย่างจากเซ็นเซอร์ RS485 Modbus ผ่าน ESP32
@@ -1197,7 +1197,9 @@ curl http://localhost:5000/api/latest   <span class="c"># → ค่าล่า
           <li><b>Self-contained:</b> ESP32 ยังเสิร์ฟ dashboard ให้เครือข่ายท้องถิ่นได้เอง (agriscan.local) แม้ไม่มีอินเทอร์เน็ต</li>
           <li><b>ติดตั้งง่าย:</b> ไม่มี build step, ไม่มี framework — deploy ผ่าน render.yaml อัตโนมัติ (Web + DB)</li>
           <li><b>ข้อมูลจริงเท่านั้น:</b> ไม่มี mock data — ค่าที่แสดงมาจากเซ็นเซอร์จริง เก็บประวัติใน PostgreSQL</li>
-          <li><b>กราฟประวัติย้อนหลัง:</b> ดูแนวโน้มความชื้น/อุณหภูมิ/EC ย้อนหลัง 24 ชม. หรือ 7 วันได้บน dashboard (วาดด้วย canvas ไม่พึ่งไลบรารี)</li>
+          <li><b>กราฟประวัติย้อนหลัง:</b> ดูแนวโน้มความชื้น/อุณหภูมิ/EC/pH/N·P·K ย้อนหลัง 24 ชม. หรือ 7 วันได้บน dashboard (วาดด้วย canvas ไม่พึ่งไลบรารี)</li>
+          <li><b>แจ้งเตือน Line ทันที:</b> ค่าเกินเกณฑ์ของพืชที่เลือก (ดินแห้ง, pH กรด, EC เค็ม, N/P/K ต่ำ) → backend push ผ่าน LINE Messaging API (1:1 กับ LINE Official Account) — มี cooldown กันสแปม, เกณฑ์ตรงกับหน้าจอทุกประการ (generate จาก crops.js)</li>
+          <li><b>ตั้งค่าได้โดยไม่ต้อง re-flash:</b> หน้า <code class="inline">/config</code> บน ESP32 ตั้ง WiFi/Cloud/API key เก็บใน NVS; ถ้า WiFi เชื่อมไม่ได้ เปิด AP "Agriscan-Config" ให้ตั้งค่าใหม่จากมือถือ</li>
           <li><b>เกณฑ์อ้างอิงทางการ:</b> P/K/EC/pH ตามเกณฑ์กรมพัฒนาที่ดิน พร้อมแหล่งอ้างอิง และ <b>เลือกชนิดพืชได้</b> (18 ชนิด: ข้าว/ข้าวโพด/ยางพารา/ลำไย/ลิ้นจี่/ทุเรียน/มังคุด/มันสำปะหลัง/มันฝรั่ง/หอมหัวใหญ่/กระเทียม/พุทรา/แตงโม/ฟักทอง/ผักสวนครัว/ส้มโอ/ฝรั่ง/อื่นๆ) เกณฑ์เปลี่ยนตามพืช</li>
           <li><b>ทนทาน:</b> อ่านเซ็นเซอร์ไม่สำเร็จใช้ค่าเดิม, WiFi หลุด reconnect อัตโนมัติ, fallback chain 7 ระดับ</li>
           <li><b>ใช้งานง่าย:</b> UI ภาษาไทย + คำแนะนำบอกสูตรปุ๋ยเป็นตัวเลขชัดเจน</li>
@@ -1207,8 +1209,8 @@ curl http://localhost:5000/api/latest   <span class="c"># → ค่าล่า
         <h3>ข้อจำกัด (ต้องรู้ก่อนนำเสนอ)</h3>
         <ul>
 
-          <li><b>WiFi hardcode:</b> SSID/รหัสอยู่ในโค้ด ต้องแก้และ re-flash เพื่อเปลี่ยนเครือข่าย</li>
-          <li><b>ต้องซิงค์ 2 ชุดด้วยมือ:</b> <code class="inline">dashboard.h</code> (ฝังใน ESP32) กับโฟลเดอร์ <code class="inline">dashboard/</code></li>
+          <li><b>ค่าเริ่มต้น WiFi ยังในโค้ด:</b> ค่าจาก secrets.h เป็นค่า default (fallback) แต่ตั้งใหม่ได้ผ่านหน้า /config โดยไม่ต้อง re-flash</li>
+          <li><b>ซิงค์ไฟล์ GENERATED ระวัง:</b> <code class="inline">dashboard.h</code> กับ <code class="inline">crop_criteria.py</code> ต้องสร้างด้วย <code class="inline">node scripts/build.js</code> หลังแก้ <code class="inline">dashboard/</code> — ห้ามแก้ด้วยมือ</li>
           <li><b>ความปลอดภัยแบบเบา:</b> API key กันการส่งข้อมูลปลอม แต่ CORS ยังเปิดและ key ฝังใน firmware</li>
           <li><b>ค่า N (mg/kg) ไม่มีเกณฑ์ทางการ:</b> กรมฯ วัด N เป็น % — ค่าจากเซ็นเซอร์เป็นเพียงค่าบ่งชี้</li>
         </ul>
@@ -1263,7 +1265,7 @@ curl http://localhost:5000/api/latest   <span class="c"># → ค่าล่า
         <div class="big">6</div>
         <div>
           <h4>ปิดด้วยการต่อยอด</h4>
-          <p>"ตอนนี้มี<b>กราฟประวัติ</b> 24 ชม./7 วันแล้ว ต่อไปเพิ่ม<b>แจ้งเตือนผ่าน Line</b> ได้"</p>
+          <p>"ตอนนี้มี<b>การแจ้งเตือนเข้า Line</b> เมื่อค่าดินผิดปกติแล้ว (ตามเกณฑ์พืชที่เลือก) ต่อไปจะเพิ่ม<b>ปั๊มน้ำควบคุมอัตโนมัติ</b> — เปิดปิดการรดน้ำเองเมื่อดินแห้ง"</p>
         </div>
       </div>
     </div>
@@ -1286,14 +1288,19 @@ curl http://localhost:5000/api/latest   <span class="c"># → ค่าล่า
     </div>
     <div class="roadmap">
       <div class="rm reveal">
-        <span class="rm-stage">ระยะ 1 · กลาง</span>
+        <span class="rm-stage">✅ เสร็จแล้ว · v2.4.0</span>
         <h4>⚙️ Config Portal</h4>
-        <p>ESP32 สร้าง WiFi AP ให้ตั้ง SSID/รหัส/Cloud URL ผ่านเว็บ — เลิกแก้โค้ดและ re-flash ทุกครั้ง (ตามแบบ Agriflow)</p>
+        <p>หน้า <code class="inline">/config</code> บน ESP32 (หรือ AP "Agriscan-Config" ตอน WiFi เชื่อมไม่ได้) ตั้ง SSID/รหัส/Cloud URL/API key เก็บใน NVS — เลิกแก้โค้ดและ re-flash ทุกครั้ง</p>
+      </div>
+      <div class="rm reveal">
+        <span class="rm-stage">✅ เสร็จแล้ว · v2.4.0</span>
+        <h4>🔔 แจ้งเตือนผ่าน Line</h4>
+        <p>backend เทียบค่าเท่ากับเกณฑ์ของพืชที่เลือกบน dashboard (ส่งผ่าน <code class="inline">POST /api/crop</code>) แล้ว push ข้อความผ่าน LINE Messaging API (เดิมใช้ LINE Notify — ปิดบริการ 31 มี.ค. 2025) ทันทีเมื่อเกินเกณฑ์ — cooldown 60 นาที กันสแปม (env <code class="inline">LINE_TOKEN</code> + <code class="inline">LINE_USER_ID</code>)</p>
       </div>
       <div class="rm reveal">
         <span class="rm-stage">ระยะ 2 · กลาง</span>
-        <h4>🔔 แจ้งเตือนผ่าน Line</h4>
-        <p>เมื่อค่าเกินเกณฑ์ (เช่น ดินแห้ง, pH กรด) backend ส่ง Line Notify ไปหาคนดูแลทันที</p>
+        <h4>🚿 ปั๊มน้ำอัตโนมัติ</h4>
+        <p>ESP32 ต่อ relay ควบคุมปั๊ม — ปุ่มรดน้ำบน dashboard เปิด/ปิดเองหรืออัตโนมัติเมื่อความชื้นต่ำกว่าเกณฑ์ (ระบบปิดวงจรสมบูรณ์)</p>
       </div>
       <div class="rm reveal">
         <span class="rm-stage">ระยะ 3 · ขยาย</span>
@@ -1310,7 +1317,7 @@ curl http://localhost:5000/api/latest   <span class="c"># → ค่าล่า
 
   <!-- ═══════════ Footer ═══════════ -->
   <footer class="reveal">
-    <p>Agriscan v2 · Ⓥ 2.3.0 · ระบบ IoT ตรวจวัดค่าดินแบบ Real-time · ข้อมูลจริงบนคลาวด์ · เอกสารประกอบการนำเสนอ (ฉบับสมบูรณ์)</p>
+    <p>Agriscan v2 · Ⓥ 2.4.0 · ระบบ IoT ตรวจวัดค่าดินแบบ Real-time · ข้อมูลจริงบนคลาวด์ · เอกสารประกอบการนำเสนอ (ฉบับสมบูรณ์)</p>
     <button class="btn" onclick="window.print()">🖨️ พิมพ์ / บันทึกเป็น PDF</button>
   </footer>
 

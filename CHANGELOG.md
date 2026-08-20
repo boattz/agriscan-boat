@@ -9,8 +9,27 @@
 
 ---
 
+## [2.4.1] — 2026-08-20
+### Fixed
+- **แจ้งเตือน Line พังจากบริการปิดตัว** — LINE Notify ยุติบริการ 31 มี.ค. 2025 → ย้ายไป **LINE Messaging API** (`POST /v2/bot/message/push` แบบ 1:1 กับ LINE Official Account) — code เปลี่ยนจาก `line_notify()` เป็น `line_push()`, เพิ่ม env `LINE_USER_ID` (ผู้รับ push) ใน render.yaml (`sync: false`); ยังไม่ตั้ง token/user id ครบ → log แทนเหมือนเดิม
+  - หมายเหตุ: แชนแนล ID / Channel Secret ของบัญชีใช้เฉพาะตรวจสอบลายเซ็น webhook — ระบบยังไม่ใช้ webhook ไม่ต้องตั้ง env
+
 ## [Unreleased]
 - (งานที่ค้างยังไม่ release — ดู git log)
+
+## [2.4.0] — 2026-08-20
+### Added
+- **🔔 แจ้งเตือน Line** — backend เทียบค่าล่าสุดกับเกณฑ์ของพืชที่เลือกแล้วส่ง Line (เดิมใช้ LINE Notify → เปลี่ยนเป็น LINE Messaging API ใน 2.4.1 เพราะบริการปิดตัว) — ต้องตั้ง env `LINE_TOKEN` + `LINE_USER_ID`; ไม่ตั้งจะ log แทน — มี cooldown กันสแปม (`LINE_COOLDOWN_MIN` default 60 นาที), ปรับสเกลตามพืช
+  - **เกณฑ์ตรงกับ frontend ทุกประการ** — เกณฑ์พืช (crops.js) ถูก generate เป็น `backend/crop_criteria.py` โดย `scripts/build.js` — แก้ทีเดียวที่ crops.js
+  - **`/api/crop` (GET/POST)** — dashboard ส่งชนิดพืชที่ผู้ใช้เลือกมาให้ backend ใช้ประเมินการแจ้งเตือน; เก็บใน table `settings` (PostgreSQL + SQLite)
+- **⚙️ Config Portal บน ESP32** — หน้า `http://<ip>/config` ตั้ง WiFi (SSID/รหัส) + Cloud URL + API key เก็บใน NVS — ไม่ต้องแก้โค้ดและ re-flash ทุกครั้ง; ถ้า WiFi เชื่อมไม่ได้ ESP32 เปิด AP `Agriscan-Config` (password: `agriscan`) ให้ตั้งค่าใหม่, ปุ่มล้างค่า (/clear) กลับไปค่าเริ่มต้นจาก secrets.h
+- **ESP32 ส่งคลาวด์แข็งแรงขึ้น** — `http.setTimeout(5s)` กัน loop ค้าง + backoff อัตโนมัติ 3→6→12→30 วิ เมื่อส่งไม่สำเร็จ แล้วกลับ 3 วิเมื่อสำเร็จ; WiFi หลุดเกิน 30 วิ → เปิด AP ให้ตั้งค่า แล้ว reconnect ทุก 10 วิ
+- **กราฟประวัติเพิ่ม pH + N·P·K** — จากเดิม 3 ชุดข้อมูล (ความชื้น/อุณหภูมิ/EC) เป็น 7 ชุด (แต่ละชุด normalize สเกลตัวเอง) + legend ครบ
+- **`scripts/build.js`** — กำจัดงาน "ซิงค์ dashboard.h ด้วยมือ": generate `esp32/agriscan/dashboard.h` (HTML+CSS+JS รวมเป็น raw string) + `backend/crop_criteria.py` จาก `dashboard/` (source of truth เดียว) — รัน: `node scripts/build.js`
+- env `LINE_TOKEN` เพิ่มใน render.yaml (`sync: false` — ตั้งจาก Render Dashboard)
+
+### Fixed
+- **`dashboard.h` ล้าสมัย** — ตัวฝังเดิมเป็น script.js เวอร์ชันเก่า (ไม่มี fallback chain ครบ) — regenerate ใหม่จากสคริปต์, ตอนนี้เท่ากับ `dashboard/` ทุกประการ
 
 ## [2.3.0] — 2026-08-18
 ### Added
