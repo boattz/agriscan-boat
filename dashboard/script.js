@@ -502,8 +502,13 @@ async function fetchHistory() {
       const json = await res.json();
       if (!Array.isArray(json)) continue;
       HISTORY.points = json;
-      drawHistory();
-      hideChartEmpty();
+      try {
+        drawHistory();
+        hideChartEmpty();
+      } catch (err) {
+        console.error('drawHistory ล้มเหลว:', err);
+        showChartEmpty('วาดกราฟไม่สำเร็จ — เปิด Console (F12) แล้วส่งข้อความ error ให้ผู้ดูแล');
+      }
       return;
     } catch (e) { /* ลอง endpoint ถัดไป */ }
   }

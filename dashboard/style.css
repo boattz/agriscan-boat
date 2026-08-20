@@ -729,8 +729,8 @@ body::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.9rem;
-  color: var(--text-muted);
+  font-size: 0.95rem;
+  color: var(--text-secondary);
   background: var(--bg-card);
   border-radius: 12px;
 }
