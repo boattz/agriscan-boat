@@ -712,7 +712,7 @@ body::after {
   color: var(--green-300);
 }
 
-.chart-wrap { position: relative; height: 250px; }
+.chart-wrap { position: relative; height: 420px; }
 #history-chart { width: 100%; height: 100%; display: block; }
 
 .chart-empty {
@@ -927,7 +927,7 @@ body::after {
         <div class="header-title">
           <h1>Agriscan</h1>
           <p>Real-time Soil Sensor Dashboard</p>
-          <span class="version-badge">Ⓥ 2.4.0</span>
+          <span class="version-badge">Ⓥ 2.4.2</span>
         </div>
       </div>
 
@@ -1163,7 +1163,7 @@ body::after {
         </div>
       </div>
       <div class="chart-wrap">
-        <canvas id="history-chart" height="250"></canvas>
+        <canvas id="history-chart" height="420"></canvas>
         <div class="chart-empty" id="chart-empty">⏳ กำลังโหลดประวัติ...</div>
       </div>
     </div>
@@ -1889,9 +1889,31 @@ function drawHistory() {
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
 
-  const pad = { top: 18, right: 62, bottom: 26, left: 14 };
+  // ── แผนผัง: 5 แผง แยกตามหน่วย — แต่ละแผงมีแกน y + สเกลของตัวเอง ──
+  const pad = { top: 6, right: 56, bottom: 24, left: 48 };
+  const TITLE_H = 18;   // ที่ว่างสำหรับชื่อแผงด้านบน
+  const GAP = 10;       // ช่องว่างระหว่างแผง
+  const panels = [
+    { title: 'ความชื้น (%)', min: 0, max: 100, fmt: v => String(Math.round(v)),
+      lines: [{ key: 'moisture', color: '#4ade80' }] },
+    { title: 'อุณหภูมิ (°C)', auto: true,
+      lines: [{ key: 'temperature', color: '#fb923c' }] },
+    { title: 'EC (dS/m)', auto: true,
+      lines: [{ key: 'ec', color: '#22d3ee', conv: v => (v == null ? null : v / 1000) }] },
+    { title: 'pH', min: 3, max: 9, fmt: v => v.toFixed(1),
+      lines: [{ key: 'ph', color: '#a855f7' }] },
+    { title: 'N·P·K (mg/kg)', auto: true, zero: true,
+      lines: [
+        { key: 'n', color: '#f472b6', lbl: 'N' },
+        { key: 'p', color: '#fbbf24', lbl: 'P' },
+        { key: 'k', color: '#60a5fa', lbl: 'K' },
+      ] },
+  ];
+
   const plotW = w - pad.left - pad.right;
-  const plotH = h - pad.top - pad.bottom;
+  const panelH = (h - pad.top - pad.bottom - TITLE_H * panels.length - GAP * (panels.length - 1)) / panels.length;
+  const plotY = i => pad.top + i * (TITLE_H + panelH + GAP) + TITLE_H;
+  const plotBottom = plotY(panels.length - 1) + panelH;
 
   // แกนเวลา — ใช้เวลาจริงของจุดแรก/จุดสุดท้าย
   const tMin = parseTs(pts[0].timestamp);
@@ -1899,7 +1921,7 @@ function drawHistory() {
   const span = (tMax - tMin) || 1;
   const x = t => pad.left + ((t - tMin) / span) * plotW;
 
-  // เส้นกริด 4 เส้น + ป้ายเวลา (HH:MM สำหรับ 24 ชม. / DD/MM HH:MM สำหรับช่วงยาว)
+  // เส้นกริดแนวตั้ง 4 เส้น ลากผ่านทุกแผง + ป้ายเวลา (วาดที่แถวล่างสุด)
   ctx.strokeStyle = 'rgba(34,197,94,0.10)';
   ctx.lineWidth = 1;
   ctx.fillStyle = 'rgba(148,163,184,0.75)';
@@ -1909,7 +1931,7 @@ function drawHistory() {
     const gx = pad.left + (plotW * i) / 4;
     ctx.beginPath();
     ctx.moveTo(gx, pad.top);
-    ctx.lineTo(gx, pad.top + plotH);
+    ctx.lineTo(gx, plotBottom);
     ctx.stroke();
     const t = new Date(tMin + (span * i) / 4);
     const label = HISTORY.hours > 48
@@ -1918,46 +1940,100 @@ function drawHistory() {
     ctx.fillText(label, gx, h - 8);
   }
 
-  // 7 ชุดข้อมูล — แต่ละชุด normalize ด้วย min/max ของตัวเอง (ไม่ปนสเกล)
-  const series = [
-    { key: 'moisture',    color: '#4ade80', conv: v => v },
-    { key: 'temperature', color: '#fb923c', conv: v => v },
-    { key: 'ec',          color: '#22d3ee', conv: v => v / 1000 },  // µS/cm → dS/m
-    { key: 'ph',          color: '#a855f7', conv: v => v },
-    { key: 'n',           color: '#f472b6', conv: v => v },
-    { key: 'p',           color: '#fbbf24', conv: v => v },
-    { key: 'k',           color: '#60a5fa', conv: v => v }
-  ];
-  series.forEach(s => {
-    const vals = pts.map(p => s.conv(p[s.key])).filter(v => v != null && !isNaN(v));
-    if (vals.length < 2) return;
-    const vMin = Math.min(...vals), vMax = Math.max(...vals);
-    const vSpan = (vMax - vMin) || 1;
-    const y = v => pad.top + plotH - ((v - vMin) / vSpan) * plotH;
+  const fmt = (v, p) => {
+    if (p && p.fmt) return p.fmt(v);
+    if (Number.isInteger(v)) return String(v);
+    const a = Math.abs(v);
+    return a >= 100 ? v.toFixed(0) : a >= 1 ? v.toFixed(1) : v.toFixed(2);
+  };
 
-    ctx.strokeStyle = s.color;
-    ctx.lineWidth = 1.8;
-    ctx.lineJoin = 'round';
-    ctx.beginPath();
-    let started = false;
-    pts.forEach((p, i) => {
-      const v = s.conv(p[s.key]);
-      if (v == null || isNaN(v)) return;
-      const px = x(parseTs(p.timestamp));
-      const py = y(v);
-      if (!started) { ctx.moveTo(px, py); started = true; }
-      else ctx.lineTo(px, py);
+  panels.forEach((p, i) => {
+    const yTop = plotY(i);
+
+    // วงสี + ชื่อแผง
+    ctx.textAlign = 'left';
+    ctx.font = '600 10px JetBrains Mono, monospace';
+    p.lines.forEach(ln => {
+      ctx.fillStyle = ln.color;
+      ctx.beginPath();
+      ctx.arc(pad.left + 5, yTop - 11, 3, 0, Math.PI * 2);
+      ctx.fill();
     });
-    ctx.stroke();
+    ctx.fillStyle = 'rgba(148,163,184,0.85)';
+    ctx.fillText(p.title, pad.left + 13, yTop - 8);
 
-    // ค่าล่าสุดของแต่ละชุด (ขวาสุด)
-    const lv = s.conv(pts[pts.length - 1][s.key]);
-    if (lv != null && !isNaN(lv)) {
-      ctx.fillStyle = s.color;
-      ctx.font = '600 10px JetBrains Mono, monospace';
-      ctx.textAlign = 'left';
-      ctx.fillText(lv.toFixed(1), pad.left + plotW + 6, y(lv) + 4);
+    // ช่วงสเกลของแผงนี้ (ค่าคงที่ หรือคำนวณจากข้อมูล ถ้า auto)
+    let rng;
+    if (p.min != null && p.max != null) {
+      rng = { min: p.min, max: p.max };
+    } else {
+      const vals = [];
+      p.lines.forEach(ln => pts.forEach(pt => {
+        const v = (ln.conv || (v => v))(pt[ln.key]);
+        if (v != null && !isNaN(v)) vals.push(v);
+      }));
+      if (vals.length < 2) rng = null;
+      else {
+        let mn = Math.min(...vals), mx = Math.max(...vals);
+        if (p.zero) mn = Math.min(mn, 0);
+        const sp = (mx - mn) || 1;
+        mn -= sp * 0.08; mx += sp * 0.08;   // เผื่อขอบบน/ล่าง
+        rng = { min: mn, max: mx };
+      }
     }
+    if (!rng) {
+      ctx.fillStyle = 'rgba(148,163,184,0.5)';
+      ctx.font = '10px JetBrains Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('ไม่มีข้อมูล', pad.left + plotW / 2, yTop + panelH / 2 + 3);
+      return;
+    }
+    const vSpan = (rng.max - rng.min) || 1;
+    const y = v => yTop + panelH - ((v - rng.min) / vSpan) * panelH;
+
+    // แกน y: 3 ระดับ (ล่าง/กลาง/บน) + เส้นกริดแนวนอน
+    ctx.textAlign = 'right';
+    for (let k = 0; k <= 2; k++) {
+      const v = rng.min + (vSpan * k) / 2;
+      const gy = y(v);
+      ctx.strokeStyle = 'rgba(148,163,184,0.16)';
+      ctx.beginPath();
+      ctx.moveTo(pad.left, gy);
+      ctx.lineTo(pad.left + plotW, gy);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(148,163,184,0.6)';
+      ctx.font = '9px JetBrains Mono, monospace';
+      ctx.fillText(fmt(v, p), pad.left - 6, gy + 3);
+    }
+
+    // เส้นข้อมูลของแผงนี้
+    p.lines.forEach(ln => {
+      const conv = ln.conv || (v => v);
+      let started = false;
+      let lastV = null, lastY = null;
+      ctx.strokeStyle = ln.color;
+      ctx.lineWidth = 1.8;
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      pts.forEach(pt => {
+        const v = conv(pt[ln.key]);
+        if (v == null || isNaN(v)) { started = false; return; }
+        const px = x(parseTs(pt.timestamp));
+        const py = y(v);
+        if (!started) { ctx.moveTo(px, py); started = true; }
+        else ctx.lineTo(px, py);
+        lastV = v; lastY = py;
+      });
+      ctx.stroke();
+
+      // ค่าล่าสุดติดขอบขวาของแผง (ไม่ซ้อนกัน เพราะอยู่คนละแผง)
+      if (lastV != null) {
+        ctx.fillStyle = ln.color;
+        ctx.font = '600 10px JetBrains Mono, monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText((ln.lbl ? ln.lbl + ' ' : '') + fmt(lastV, p), pad.left + plotW + 6, lastY + 4);
+      }
+    });
   });
 }
 

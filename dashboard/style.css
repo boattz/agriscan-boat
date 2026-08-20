@@ -692,7 +692,7 @@ body::after {
   color: var(--green-300);
 }
 
-.chart-wrap { position: relative; height: 250px; }
+.chart-wrap { position: relative; height: 420px; }
 #history-chart { width: 100%; height: 100%; display: block; }
 
 .chart-empty {
