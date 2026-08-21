@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -36,8 +36,7 @@
         </div>
         <div class="header-title">
           <h1>Agriscan</h1>
-          <p>Real-time Soil Sensor Dashboard</p>
-          <span class="version-badge">Ⓥ 2.4.4</span>
+          <p>แดชบอร์ดเซ็นเซอร์ดินแบบเรียลไทม์</p>
         </div>
       </div>
 
@@ -56,15 +55,12 @@
     <!-- ═══ CONNECTING BANNER ═══ -->
     <div class="connecting-banner" id="connecting-banner">
       <div class="connecting-spinner"></div>
-      <div
-        style="flex: 1; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+      <div class="banner-body">
         <div>
           <p>กำลังเชื่อมต่อกับ ESP32...</p>
-          <small id="retry-count">กำลังลอง retry...</small>
+          <small id="retry-count">กำลังลองใหม่...</small>
         </div>
-        <button onclick="changeIp()"
-          style="background: rgba(251,191,36,0.15); border: 1px solid rgba(251,191,36,0.4); color: var(--amber-400); padding: 5px 12px; border-radius: var(--radius-pill); cursor: pointer; font-size: 0.75rem; font-family: var(--font-body);">⚙
-          ระบุ IP ของ ESP32</button>
+        <button class="banner-btn" onclick="changeIp()">⚙ ระบุ IP ของ ESP32</button>
       </div>
     </div>
 
@@ -73,7 +69,7 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
       </svg>
-      ⚙ แสดงข้อมูลจำลอง (Mock Data) — ESP32 ยังไม่ได้เชื่อมต่อ
+      แสดงข้อมูลจำลอง — ESP32 ยังไม่ได้เชื่อมต่อ
     </div>
 
     <!-- ═══ CROP SELECTOR ═══ -->
@@ -109,17 +105,17 @@
     <div class="cards-grid" id="cards-grid">
 
       <!-- Moisture -->
-      <div class="card" id="card-moisture" style="--card-accent: linear-gradient(90deg,#22c55e,#4ade80);">
+      <div class="card" id="card-moisture">
         <div class="card-header">
-          <span class="card-label">ความชื้น</span>
-          <div class="card-icon" style="--icon-bg: rgba(34,197,94,0.15);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="1.8" stroke-linecap="round"
+          <span class="card-label">ความชื้นดิน</span>
+          <div class="card-icon icon-moisture">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
               stroke-linejoin="round">
               <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
             </svg>
           </div>
         </div>
-        <div>
+        <div class="card-value-row">
           <span class="card-value" id="val-moisture">--</span>
           <span class="card-unit">%</span>
         </div>
@@ -127,27 +123,22 @@
           <div class="moisture-bar-track">
             <div class="moisture-bar-fill" id="bar-moisture" style="width: 0%;"></div>
           </div>
-          <div class="moisture-labels">
-            <span>0%</span>
-            <span>50%</span>
-            <span>100%</span>
-          </div>
         </div>
         <div class="card-status ok" id="status-moisture">● ปกติ</div>
       </div>
 
       <!-- Temperature -->
-      <div class="card" id="card-temp" style="--card-accent: linear-gradient(90deg,#f97316,#fbbf24);">
+      <div class="card" id="card-temp">
         <div class="card-header">
           <span class="card-label">อุณหภูมิ</span>
-          <div class="card-icon" style="--icon-bg: rgba(249,115,22,0.15);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="1.8" stroke-linecap="round"
+          <div class="card-icon icon-temp">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
               stroke-linejoin="round">
               <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z" />
             </svg>
           </div>
         </div>
-        <div>
+        <div class="card-value-row">
           <span class="card-value" id="val-temperature">--</span>
           <span class="card-unit">°C</span>
         </div>
@@ -155,17 +146,17 @@
       </div>
 
       <!-- EC -->
-      <div class="card" id="card-ec" style="--card-accent: linear-gradient(90deg,#06b6d4,#2dd4bf);">
+      <div class="card" id="card-ec">
         <div class="card-header">
-          <span class="card-label">EC / ค่าการนำไฟฟ้า</span>
-          <div class="card-icon" style="--icon-bg: rgba(6,182,212,0.15);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="1.8" stroke-linecap="round"
+          <span class="card-label">ค่าการนำไฟฟ้า (EC)</span>
+          <div class="card-icon icon-ec">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
               stroke-linejoin="round">
               <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
             </svg>
           </div>
         </div>
-        <div>
+        <div class="card-value-row">
           <span class="card-value" id="val-ec">--</span>
           <span class="card-unit">dS/m</span>
         </div>
@@ -173,18 +164,18 @@
       </div>
 
       <!-- pH -->
-      <div class="card" id="card-ph" style="--card-accent: linear-gradient(90deg,#a855f7,#ec4899);">
+      <div class="card" id="card-ph">
         <div class="card-header">
-          <span class="card-label">pH ดิน</span>
-          <div class="card-icon" style="--icon-bg: rgba(168,85,247,0.15);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="1.8" stroke-linecap="round"
+          <span class="card-label">กรด–ด่าง (pH)</span>
+          <div class="card-icon icon-ph">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
               stroke-linejoin="round">
               <circle cx="12" cy="12" r="10" />
               <path d="M8 12h8M12 8v8" />
             </svg>
           </div>
         </div>
-        <div>
+        <div class="card-value-row">
           <span class="card-value" id="val-ph">--</span>
           <span class="card-unit">pH</span>
         </div>
@@ -194,9 +185,9 @@
       <!-- NPK -->
       <div class="card npk-card">
         <div class="card-header">
-          <span class="card-label">N · P · K (ธาตุอาหาร)</span>
-          <div class="card-icon" style="--icon-bg: rgba(168,85,247,0.15);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="1.8" stroke-linecap="round"
+          <span class="card-label">ธาตุอาหารดิน (N·P·K)</span>
+          <div class="card-icon icon-npk">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
               stroke-linejoin="round">
               <circle cx="12" cy="7" r="4" />
               <path d="M5 21v-2a7 7 0 0 1 14 0v2" />
@@ -226,10 +217,50 @@
             <span class="npk-val" id="val-k">-- <small>mg/kg</small></span>
           </div>
         </div>
-        <div class="card-status ok" id="status-npk" style="margin-top:14px;">● ปกติ</div>
+        <div class="card-status ok npk-status" id="status-npk">● ปกติ</div>
       </div>
 
     </div><!-- /cards-grid -->
+
+    <!-- ═══ SOIL MOISTURE BY DEPTH ═══ -->
+    <div class="section-title">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C9.24 2 7 4.24 7 7c0 2.09 1.24 3.88 3 4.73V22h4V11.73A4.996 4.996 0 0 0 17 7c0-2.76-2.24-5-5-5z"/>
+      </svg>
+      ความชื้นแยกตามระดับความลึกของดิน
+    </div>
+    <div class="soil-visual-card">
+      <div class="soil-layer" id="layer-surface">
+        <div class="layer-info">
+          <span class="layer-label">ผิวดิน</span>
+          <span class="layer-depth">0–15 ซม.</span>
+        </div>
+        <div class="layer-bar">
+          <div class="layer-bar-fill" id="bar-soil-surface" style="width:0%"></div>
+        </div>
+        <span class="layer-moisture" id="soil-surface">--%</span>
+      </div>
+      <div class="soil-layer" id="layer-mid">
+        <div class="layer-info">
+          <span class="layer-label">ชั้นกลาง</span>
+          <span class="layer-depth">15–30 ซม.</span>
+        </div>
+        <div class="layer-bar">
+          <div class="layer-bar-fill" id="bar-soil-mid" style="width:0%"></div>
+        </div>
+        <span class="layer-moisture" id="soil-mid">--%</span>
+      </div>
+      <div class="soil-layer" id="layer-deep">
+        <div class="layer-info">
+          <span class="layer-label">ชั้นลึก</span>
+          <span class="layer-depth">30–60 ซม.</span>
+        </div>
+        <div class="layer-bar">
+          <div class="layer-bar-fill" id="bar-soil-deep" style="width:0%"></div>
+        </div>
+        <span class="layer-moisture" id="soil-deep">--%</span>
+      </div>
+    </div>
 
     <!-- ═══ RECOMMENDATIONS ═══ -->
     <div class="section-title">
@@ -263,7 +294,7 @@
           <button type="button" class="metric-btn" data-metric="temperature" onclick="setChartMetric('temperature')"><i style="--lg:#fb923c;"></i>อุณหภูมิ (°C)</button>
           <button type="button" class="metric-btn" data-metric="ec" onclick="setChartMetric('ec')"><i style="--lg:#22d3ee;"></i>EC (dS/m)</button>
           <button type="button" class="metric-btn" data-metric="ph" onclick="setChartMetric('ph')"><i style="--lg:#a855f7;"></i>pH</button>
-          <button type="button" class="metric-btn" data-metric="npk" onclick="setChartMetric('npk')"><i style="--lg:#f472b6; background:linear-gradient(90deg,#f472b6 25%,#fbbf24 25% 50%,#60a5fa 50%);"></i>N·P·K (mg/kg)</button>
+          <button type="button" class="metric-btn" data-metric="npk" onclick="setChartMetric('npk')"><i style="--lg:#4ade80; background:linear-gradient(90deg,#4ade80 33%,#60a5fa 33% 66%,#fb923c 66%);"></i>N·P·K (mg/kg)</button>
         </div>
         <div class="history-range">
           <button class="range-btn active" data-hours="24" onclick="setHistoryRange(24)">24 ชม.</button>

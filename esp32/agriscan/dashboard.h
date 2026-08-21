@@ -15,100 +15,105 @@ const char* dashboard_html = R"rawliteral(<!DOCTYPE html>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap"
     rel="stylesheet" />
   <style>
 /* ══════════════════════════════════════════════
-   Design Tokens
+   Agriscan Dashboard — Clean & Simple
+   Dark forest base · flat cards · clear hierarchy
+   อ่านง่าย เข้าใจง่าย: ตัวเลขใหญ่ สถานะชัดเจน ตกแต่งน้อย
 ══════════════════════════════════════════════ */
 :root {
-  --green-50:  #f0fdf4;
-  --green-100: #dcfce7;
-  --green-200: #bbf7d0;
-  --green-300: #86efac;
-  --green-400: #4ade80;
-  --green-500: #22c55e;
-  --green-600: #16a34a;
-  --green-700: #15803d;
-  --green-800: #166534;
-  --green-900: #14532d;
-  --green-950: #052e16;
+  /* ── Base ── */
+  --bg-base:        #071009;
+  --bg-card:        #0d1c13;
+  --bg-card-hover:  #10231a;
+  --bg-input:       #0a1810;
 
-  --teal-400:  #2dd4bf;
-  --teal-500:  #14b8a6;
-  --teal-600:  #0d9488;
+  /* ── Borders ── */
+  --border-subtle:  rgba(255,255,255,0.06);
+  --border-default: rgba(52,211,153,0.22);
+  --border-focus:   rgba(52,211,153,0.55);
 
-  --amber-400: #fbbf24;
-  --amber-500: #f59e0b;
+  /* ── Text ── */
+  --text-1:  #f0f7f1;
+  --text-2:  #a9c6b3;
+  --text-3:  #71897b;
 
-  --red-400:   #f87171;
-  --red-500:   #ef4444;
+  /* ── Sensor accents ── */
+  --moisture:  #4ade80;
+  --moisture-dim: rgba(74,222,128,0.12);
+  --temp:      #fb923c;
+  --temp-dim:  rgba(251,146,60,0.12);
+  --ec:        #22d3ee;
+  --ec-dim:    rgba(34,211,238,0.12);
+  --ph:        #c084fc;
+  --ph-dim:    rgba(192,132,252,0.12);
+  --npk:       #f472b6;
+  --npk-dim:   rgba(244,114,182,0.12);
 
-  --blue-400:  #60a5fa;
-  --blue-500:  #3b82f6;
+  /* ── Status ── */
+  --ok:     #4ade80;
+  --ok-dim: rgba(74,222,128,0.10);
+  --warn:   #fbbf24;
+  --warn-dim: rgba(251,191,36,0.10);
+  --alert:  #f87171;
+  --alert-dim: rgba(248,113,113,0.10);
+  --info:   #60a5fa;
+  --info-dim: rgba(96,165,250,0.10);
 
-  --bg-base:      #0a1a12;
-  --bg-card:      #0f2418;
-  --bg-card-2:    #122b1e;
-  --bg-glass:     rgba(22, 101, 52, 0.18);
-  --border-dim:   rgba(34, 197, 94, 0.15);
-  --border-glow:  rgba(34, 197, 94, 0.45);
+  /* ── Radii ── */
+  --r-sm:  10px;
+  --r-md:  14px;
+  --r-lg:  18px;
+  --r-xl:  20px;
+  --r-pill: 9999px;
 
-  --text-primary:  #e2fce9;
-  --text-secondary:#93c9a5;
-  --text-muted:    #4e7860;
-
-  --shadow-glow:   0 0 32px rgba(34, 197, 94, 0.12);
-  --shadow-card:   0 4px 24px rgba(0,0,0,0.5);
-
-  --radius-card:  18px;
-  --radius-pill:  999px;
-
-  --font-body: 'Prompt', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  /* ── Typography ── */
+  --font-display: 'Kanit', sans-serif;
+  --font-body:    'Prompt', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
 }
 
 /* ══════════════════════════════════════════════
    Reset & Base
 ══════════════════════════════════════════════ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
 
 body {
   font-family: var(--font-body);
   background: var(--bg-base);
-  color: var(--text-primary);
+  color: var(--text-1);
   min-height: 100vh;
   overflow-x: hidden;
 }
 
-/* Animated background */
+/* ── Soft ambient glow ── */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(22,163,74,0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 80% at 80% 90%, rgba(13,148,136,0.08) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 40% at 60% 40%, rgba(74,222,128,0.04) 0%, transparent 50%);
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(34,197,94,0.05) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
 
-/* Floating particles */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    radial-gradient(1px 1px at 10% 20%, rgba(74,222,128,0.3) 0%, transparent 100%),
-    radial-gradient(1px 1px at 80% 15%, rgba(74,222,128,0.2) 0%, transparent 100%),
-    radial-gradient(1px 1px at 50% 60%, rgba(45,212,191,0.3) 0%, transparent 100%),
-    radial-gradient(1px 1px at 90% 70%, rgba(74,222,128,0.15) 0%, transparent 100%),
-    radial-gradient(1px 1px at 30% 80%, rgba(45,212,191,0.2) 0%, transparent 100%);
-  pointer-events: none;
-  z-index: 0;
+::selection { background: rgba(74,222,128,0.28); color: var(--text-1); }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.10);
+  border-radius: var(--r-pill);
+  border: 2px solid var(--bg-base);
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.18); }
+
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
 }
 
 /* ══════════════════════════════════════════════
@@ -117,9 +122,9 @@ body::after {
 .page-wrapper {
   position: relative;
   z-index: 1;
-  max-width: 1280px;
+  max-width: 1160px;
   margin: 0 auto;
-  padding: 0 16px 48px;
+  padding: 0 20px 56px;
 }
 
 /* ══════════════════════════════════════════════
@@ -130,389 +135,207 @@ body::after {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 18px;
-  padding: 28px 0 24px;
-  border-bottom: 1px solid var(--border-dim);
-  margin-bottom: 32px;
+  gap: 16px;
+  padding: 26px 0 22px;
+  margin-bottom: 24px;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
 }
 
 .logo-wrap {
-  width: 60px; height: 60px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, var(--green-600), var(--teal-600));
+  width: 48px; height: 48px;
+  border-radius: var(--r-md);
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
   display: grid;
   place-items: center;
-  box-shadow: 0 0 24px rgba(22,197,94,0.35);
   flex-shrink: 0;
 }
-
-.logo-wrap svg { width: 32px; height: 32px; fill: white; }
+.logo-wrap svg { width: 26px; height: 26px; fill: white; }
 
 .header-title h1 {
-  font-size: clamp(1.4rem, 4vw, 1.9rem);
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.3px;
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 600;
+  color: var(--text-1);
+  line-height: 1.2;
 }
 
 .header-title p {
-  font-size: 0.92rem;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
-
-.version-badge {
-  display: inline-block;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.4px;
-  color: var(--green-300);
-  background: rgba(34,197,94,0.12);
-  border: 1px solid rgba(34,197,94,0.25);
-  border-radius: var(--radius-pill);
-  padding: 3px 10px;
-  margin-top: 6px;
-  width: fit-content;
+  font-size: 0.85rem;
+  color: var(--text-3);
+  margin-top: 2px;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
-/* Status badge */
+/* ── Status badge ── */
 .status-badge {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 20px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--border-dim);
-  background: var(--bg-card);
-  font-size: 0.9rem;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: var(--r-pill);
+  font-size: 0.84rem;
   font-weight: 500;
-  transition: all 0.4s ease;
+  transition: all 0.3s ease;
 }
-
 .status-badge.online {
-  border-color: rgba(34,197,94,0.4);
-  background: rgba(22,101,52,0.35);
-  color: var(--green-300);
+  background: var(--ok-dim);
+  color: var(--ok);
 }
-
 .status-badge.offline {
-  border-color: rgba(239,68,68,0.3);
-  background: rgba(239,68,68,0.08);
-  color: var(--red-400);
+  background: var(--alert-dim);
+  color: var(--alert);
 }
-
-.status-badge.connecting {
-  border-color: rgba(251,191,36,0.3);
-  background: rgba(251,191,36,0.06);
-  color: var(--amber-400);
-}
-
+.status-badge.connecting,
 .status-badge.stale {
-  border-color: rgba(251,191,36,0.4);
-  background: rgba(251,191,36,0.1);
-  color: var(--amber-400);
+  background: var(--warn-dim);
+  color: var(--warn);
 }
 
 .status-dot {
-  width: 10px; height: 10px;
+  width: 8px; height: 8px;
   border-radius: 50%;
   background: currentColor;
   flex-shrink: 0;
 }
-
-.status-badge.online .status-dot  { animation: pulse-dot 2s infinite; }
-.status-badge.connecting .status-dot { animation: blink-dot 0.8s infinite; }
-.status-badge.stale .status-dot    { animation: blink-dot 0.8s infinite; }
+.status-badge.online .status-dot { animation: pulse-dot 2s infinite; }
+.status-badge.connecting .status-dot,
+.status-badge.stale .status-dot  { animation: blink-dot 1s infinite; }
 
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
-  50% { opacity: 0.8; box-shadow: 0 0 0 5px rgba(34,197,94,0); }
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(74,222,128,0.35); }
+  50%      { opacity: 0.7; box-shadow: 0 0 0 5px rgba(74,222,128,0); }
 }
 @keyframes blink-dot {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.2; }
+  50%      { opacity: 0.25; }
 }
 
-/* Last update */
 .last-update {
-  font-size: 0.88rem;
-  color: var(--text-muted);
+  font-size: 0.82rem;
+  color: var(--text-3);
   font-family: var(--font-mono);
 }
 
-/* IP badge */
+/* ── IP badge ── */
 .ip-badge {
-  font-size: 0.86rem;
+  font-size: 0.78rem;
   font-family: var(--font-mono);
-  color: var(--teal-400);
-  background: rgba(13,148,136,0.12);
-  border: 1px solid rgba(13,148,136,0.25);
-  padding: 6px 16px;
-  border-radius: var(--radius-pill);
+  color: var(--text-2);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  padding: 6px 13px;
+  border-radius: var(--r-pill);
   cursor: pointer;
-  transition: all 0.2s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+  transition: all 0.15s ease;
 }
 .ip-badge:hover {
-  background: rgba(13,148,136,0.25);
-  border-color: var(--teal-400);
+  color: var(--text-1);
+  border-color: var(--border-default);
 }
 
-/* Data source badge — บอกว่าได้ข้อมูลจากไหน + อายุข้อมูล */
+/* ── Source badge ── */
 .source-badge {
   display: none;
   align-items: center;
-  gap: 8px;
-  padding: 6px 16px;
-  border-radius: var(--radius-pill);
-  font-size: 0.86rem;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  font-size: 0.78rem;
   font-weight: 500;
-  border: 1px solid;
   white-space: nowrap;
 }
 .source-badge.fresh {
   display: inline-flex;
-  border-color: rgba(34,197,94,0.35);
-  background: rgba(34,197,94,0.1);
-  color: var(--green-300);
+  background: var(--ok-dim);
+  color: var(--ok);
 }
 .source-badge.stale {
   display: inline-flex;
-  border-color: rgba(251,191,36,0.4);
-  background: rgba(251,191,36,0.1);
-  color: var(--amber-400);
+  background: var(--warn-dim);
+  color: var(--warn);
 }
 
 /* ══════════════════════════════════════════════
-   Connecting overlay
+   Banners (connecting / mock)
 ══════════════════════════════════════════════ */
 .connecting-banner {
   display: none;
   align-items: center;
-  gap: 16px;
-  padding: 18px 26px;
-  border-radius: var(--radius-card);
-  background: rgba(251,191,36,0.07);
-  border: 1px solid rgba(251,191,36,0.25);
-  margin-bottom: 24px;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: var(--r-lg);
+  background: var(--warn-dim);
+  margin-bottom: 18px;
   animation: slide-down 0.3s ease;
 }
 .connecting-banner.visible { display: flex; }
 
 @keyframes slide-down {
-  from { opacity: 0; transform: translateY(-8px); }
+  from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 .connecting-spinner {
-  width: 24px; height: 24px;
-  border: 3px solid rgba(251,191,36,0.2);
-  border-top-color: var(--amber-400);
+  width: 20px; height: 20px;
+  border: 2.5px solid rgba(251,191,36,0.2);
+  border-top-color: var(--warn);
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin 0.7s linear infinite;
   flex-shrink: 0;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.connecting-banner p { font-size: 1rem; color: var(--amber-400); }
-.connecting-banner small { font-size: 0.86rem; color: var(--text-muted); }
-
-/* ══════════════════════════════════════════════
-   Cards Grid
-══════════════════════════════════════════════ */
-.cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 22px;
-  margin-bottom: 28px;
-}
-
-/* ── Base card ── */
-.card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-dim);
-  border-radius: var(--radius-card);
-  padding: 28px 26px 24px;
-  box-shadow: var(--shadow-card);
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: var(--card-accent, linear-gradient(90deg, var(--green-500), var(--teal-500)));
-  opacity: 0.7;
-  transition: opacity 0.25s;
-}
-
-.card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-card), 0 0 28px rgba(34,197,94,0.1);
-  border-color: var(--border-glow);
-}
-.card:hover::before { opacity: 1; }
-
-/* ── Card header ── */
-.card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 18px;
-}
-
-.card-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.card-icon {
-  width: 44px; height: 44px;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  background: var(--icon-bg, rgba(34,197,94,0.12));
-  flex-shrink: 0;
-}
-.card-icon svg { width: 22px; height: 22px; }
-
-/* ── Card value ── */
-.card-value {
-  font-size: clamp(2.7rem, 6vw, 3.6rem);
-  font-weight: 700;
-  line-height: 1;
-  font-family: var(--font-mono);
-  color: var(--text-primary);
-  transition: color 0.4s ease;
-}
-
-.card-unit {
-  font-size: 1rem;
-  color: var(--text-muted);
-  font-family: var(--font-body);
-  font-weight: 400;
-  margin-left: 6px;
-}
-
-/* ── Status chip ── */
-.card-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 0.88rem;
-  font-weight: 600;
-  padding: 6px 14px;
-  border-radius: var(--radius-pill);
-  margin-top: 14px;
-  transition: all 0.4s ease;
-  line-height: 1.3;
-}
-.card-status.ok     { background: rgba(34,197,94,0.12); color: var(--green-400); }
-.card-status.warn   { background: rgba(251,191,36,0.12); color: var(--amber-400); }
-.card-status.alert  { background: rgba(239,68,68,0.12); color: var(--red-400); }
-
-/* ── Progress bar (moisture) ── */
-.moisture-bar-wrap {
-  margin-top: 18px;
-}
-
-.moisture-bar-track {
-  height: 12px;
-  background: rgba(255,255,255,0.06);
-  border-radius: var(--radius-pill);
-  overflow: hidden;
-}
-
-.moisture-bar-fill {
-  height: 100%;
-  border-radius: var(--radius-pill);
-  background: var(--bar-color, var(--green-500));
-  transition: width 0.8s cubic-bezier(0.4,0,0.2,1), background 0.5s ease;
-  box-shadow: 0 0 8px var(--bar-color, var(--green-500));
-}
-
-.moisture-labels {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 8px;
-}
-.moisture-labels span {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-}
-
-/* ── NPK card ── */
-.npk-card { --card-accent: linear-gradient(90deg, #a855f7, #3b82f6); }
-.npk-card .card-icon { --icon-bg: rgba(168,85,247,0.15); }
-
-.npk-bars { margin-top: 18px; display: flex; flex-direction: column; gap: 16px; }
-
-.npk-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.npk-label {
-  font-size: 0.9rem;
-  font-weight: 700;
-  width: 20px;
-  flex-shrink: 0;
-  font-family: var(--font-mono);
-}
-.npk-label.n { color: #86efac; }
-.npk-label.p { color: #93c5fd; }
-.npk-label.k { color: #fdba74; }
-
-.npk-track {
+.banner-body {
   flex: 1;
-  height: 10px;
-  background: rgba(255,255,255,0.06);
-  border-radius: var(--radius-pill);
-  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.npk-fill {
-  height: 100%;
-  border-radius: var(--radius-pill);
-  transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
-}
-.npk-fill.n { background: linear-gradient(90deg, #22c55e, #86efac); }
-.npk-fill.p { background: linear-gradient(90deg, #3b82f6, #93c5fd); }
-.npk-fill.k { background: linear-gradient(90deg, #f97316, #fdba74); }
+.connecting-banner p { font-size: 0.9rem; color: var(--warn); font-weight: 500; }
+.connecting-banner small { font-size: 0.8rem; color: var(--text-3); }
 
-.npk-val {
-  font-size: 0.9rem;
-  font-family: var(--font-mono);
-  color: var(--text-secondary);
-  width: 56px;
-  text-align: right;
-  flex-shrink: 0;
+.banner-btn {
+  background: rgba(251,191,36,0.14);
+  border: none;
+  color: var(--warn);
+  padding: 7px 14px;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-family: var(--font-body);
+  transition: background 0.15s ease;
 }
+.banner-btn:hover { background: rgba(251,191,36,0.24); }
+
+.mock-banner {
+  display: none;
+  padding: 11px 16px;
+  border-radius: var(--r-md);
+  background: var(--info-dim);
+  font-size: 0.85rem;
+  color: var(--info);
+  margin-bottom: 18px;
+  align-items: center;
+  gap: 8px;
+}
+.mock-banner.visible { display: flex; }
 
 /* ══════════════════════════════════════════════
-   Crop selector
+   Crop Selector
 ══════════════════════════════════════════════ */
 .crop-selector {
   display: flex;
@@ -520,143 +343,369 @@ body::after {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
-  padding: 18px 20px;
+  padding: 14px 18px;
   margin-bottom: 22px;
-  border-radius: var(--radius-card);
-  background: var(--bg-glass);
-  border: 1px solid var(--border-dim);
-  backdrop-filter: blur(8px);
+  border-radius: var(--r-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
 }
 
 .crop-selector-label {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-1);
 }
 
 .crop-selector-controls {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .crop-selector select {
   appearance: none;
-  padding: 11px 44px 11px 18px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--border-dim);
-  background: var(--bg-card) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2393c9a5' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 18px center;
-  color: var(--text-primary);
+  padding: 9px 38px 9px 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-input) url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2371897b' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center;
+  color: var(--text-1);
   font-family: var(--font-body);
-  font-size: 1rem;
+  font-size: 0.92rem;
   cursor: pointer;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.15s ease;
 }
-.crop-selector select:hover {
-  border-color: var(--border-glow);
-}
+.crop-selector select:hover { border-color: var(--border-default); }
 .crop-selector select:focus {
   outline: none;
-  border-color: var(--border-glow);
-  box-shadow: 0 0 0 3px rgba(34,197,94,0.15);
+  border-color: var(--border-focus);
 }
 .crop-selector select option {
-  background: var(--bg-card-2);
-  color: var(--text-primary);
+  background: var(--bg-input);
+  color: var(--text-1);
 }
 
 .crop-badge {
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   font-weight: 600;
-  color: var(--green-300);
-  padding: 9px 16px;
-  border-radius: var(--radius-pill);
-  background: rgba(34,197,94,0.12);
-  border: 1px solid rgba(34,197,94,0.25);
+  color: var(--moisture);
+  padding: 7px 14px;
+  border-radius: var(--r-pill);
+  background: var(--moisture-dim);
   white-space: nowrap;
 }
 
 .crop-selector-hint {
   width: 100%;
-  font-size: 0.84rem;
-  color: var(--text-muted);
+  font-size: 0.78rem;
+  color: var(--text-3);
 }
 
 /* ══════════════════════════════════════════════
-   Recommendations
+   Sensor Cards
 ══════════════════════════════════════════════ */
-.section-title {
-  font-size: 0.95rem;
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  margin-bottom: 26px;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-default);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.card-label {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+/* ── Icon tiles (color = metric identity) ── */
+.card-icon {
+  width: 36px; height: 36px;
+  border-radius: var(--r-sm);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.card-icon svg { width: 19px; height: 19px; }
+
+.icon-moisture { color: var(--moisture); background: var(--moisture-dim); }
+.icon-temp     { color: var(--temp);     background: var(--temp-dim);     }
+.icon-ec       { color: var(--ec);       background: var(--ec-dim);       }
+.icon-ph       { color: var(--ph);       background: var(--ph-dim);       }
+.icon-npk      { color: var(--npk);      background: var(--npk-dim);      }
+
+.npk-card .card-icon { color: var(--npk); background: var(--npk-dim); }
+
+/* ── Value ── */
+.card-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.card-value {
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 5vw, 2.9rem);
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: 16px;
+  line-height: 1;
+  color: var(--text-1);
+}
+
+.card-unit {
+  font-size: 0.9rem;
+  color: var(--text-3);
+  font-weight: 400;
+}
+
+/* ── Status chip ── */
+.card-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  margin-top: 14px;
+  line-height: 1.4;
+  transition: all 0.3s ease;
+}
+.card-status.ok     { background: var(--ok-dim);    color: var(--ok); }
+.card-status.warn   { background: var(--warn-dim);  color: var(--warn); }
+.card-status.alert  { background: var(--alert-dim); color: var(--alert); }
+
+.npk-card .card-status { margin-top: 14px; }
+
+/* ── Moisture bar ── */
+.moisture-bar-wrap { margin-top: 14px; }
+
+.moisture-bar-track {
+  height: 6px;
+  background: rgba(255,255,255,0.06);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+
+.moisture-bar-fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--bar-color, var(--moisture));
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1), background 0.4s ease;
+}
+
+/* ── NPK card ── */
+.npk-bars { margin-top: 2px; display: flex; flex-direction: column; gap: 13px; }
+
+.npk-row {
   display: flex;
   align-items: center;
   gap: 10px;
 }
+
+.npk-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  width: 16px;
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+}
+.npk-label.n { color: #4ade80; }
+.npk-label.p { color: #60a5fa; }
+.npk-label.k { color: #fb923c; }
+
+.npk-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,0.06);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+
+.npk-fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+}
+.npk-fill.n { background: #4ade80; }
+.npk-fill.p { background: #60a5fa; }
+.npk-fill.k { background: #fb923c; }
+
+.npk-val {
+  font-size: 0.82rem;
+  font-family: var(--font-mono);
+  color: var(--text-2);
+  width: 52px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.npk-val small { font-size: 0.68rem; color: var(--text-3); }
+
+/* ══════════════════════════════════════════════
+   Section Titles
+══════════════════════════════════════════════ */
+.section-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-1);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title svg { color: var(--moisture); flex-shrink: 0; }
 .section-title::after {
   content: '';
   flex: 1;
   height: 1px;
-  background: var(--border-dim);
+  background: var(--border-subtle);
 }
 
+/* ══════════════════════════════════════════════
+   Soil Moisture by Depth
+   แถวละ 1 ชั้นดิน: ชื่อ | แถบความชื้น | % — อ่านจบในแวบเดียว
+   สีตามระดับ: แห้ง <30% (เหลือง) · ชื้น 30–70% (เขียว) · แฉะ >70% (ฟ้า)
+══════════════════════════════════════════════ */
+.soil-visual-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  padding: 18px 20px;
+  margin-bottom: 26px;
+}
+
+.soil-layer {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.layer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 96px;
+  flex-shrink: 0;
+}
+
+.layer-label {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-1);
+}
+
+.layer-depth {
+  font-size: 0.72rem;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+}
+
+.layer-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(255,255,255,0.06);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+}
+
+.layer-bar-fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--level-color, var(--text-3));
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1), background 0.5s ease;
+}
+
+.layer-moisture {
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  color: var(--level-color, var(--text-2));
+  width: 58px;
+  text-align: right;
+  flex-shrink: 0;
+  transition: color 0.5s ease;
+}
+
+.soil-layer[data-level="dry"]   { --level-color: var(--warn); }
+.soil-layer[data-level="moist"] { --level-color: var(--ok);   }
+.soil-layer[data-level="wet"]   { --level-color: var(--ec);   }
+
+/* ══════════════════════════════════════════════
+   Recommendations
+══════════════════════════════════════════════ */
 .rec-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 10px;
+  margin-bottom: 26px;
 }
 
 .rec-item {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  padding: 18px 20px;
-  border-radius: 14px;
-  border: 1px solid transparent;
-  transition: transform 0.2s ease;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  border-left: 3px solid transparent;
 }
-.rec-item:hover { transform: translateX(3px); }
 
-.rec-item.ok      { background: rgba(34,197,94,0.06);  border-color: rgba(34,197,94,0.15);  }
-.rec-item.warn    { background: rgba(251,191,36,0.06); border-color: rgba(251,191,36,0.2);  }
-.rec-item.alert   { background: rgba(239,68,68,0.06);  border-color: rgba(239,68,68,0.18);  }
-.rec-item.info    { background: rgba(59,130,246,0.06); border-color: rgba(59,130,246,0.18); }
+.rec-item.ok    { background: var(--ok-dim);    border-left-color: var(--ok);    }
+.rec-item.warn  { background: var(--warn-dim);  border-left-color: var(--warn);  }
+.rec-item.alert { background: var(--alert-dim); border-left-color: var(--alert); }
+.rec-item.info  { background: var(--info-dim);  border-left-color: var(--info);  }
 
 .rec-icon {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   line-height: 1;
   flex-shrink: 0;
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
-.rec-content { flex: 1; }
+.rec-content { flex: 1; min-width: 0; }
 
 .rec-title {
-  font-size: 0.98rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  color: var(--text-primary);
-  margin-bottom: 4px;
+  color: var(--text-1);
+  margin-bottom: 3px;
 }
 
 .rec-desc {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
+  font-size: 0.83rem;
+  color: var(--text-2);
   line-height: 1.55;
 }
 
 /* ══════════════════════════════════════════════
-   History chart
+   History Chart
 ══════════════════════════════════════════════ */
 .history-card {
   background: var(--bg-card);
-  border: 1px solid var(--border-dim);
-  border-radius: var(--radius-card);
-  padding: 18px 22px;
-  margin-bottom: 28px;
-  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  padding: 16px 18px;
+  margin-bottom: 26px;
 }
 
 .history-toolbar {
@@ -664,83 +713,74 @@ body::after {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
 .history-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 18px;
-}
-
-.legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 0.88rem;
-  color: var(--text-secondary);
-}
-.legend-item i {
-  width: 10px; height: 10px;
-  border-radius: 50%;
-  background: var(--lg, var(--green-400));
-  display: inline-block;
-  flex-shrink: 0;
+  gap: 6px;
 }
 
 .metric-btn {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  font-size: 0.82rem;
-  color: var(--text-secondary);
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--text-2);
   background: transparent;
-  border: 1px solid var(--border-dim);
-  border-radius: var(--radius-pill);
-  padding: 5px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-pill);
+  padding: 6px 13px;
   font-family: var(--font-body);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 .metric-btn i {
-  width: 10px; height: 10px;
+  width: 8px; height: 8px;
   border-radius: 50%;
-  background: var(--lg, var(--green-400));
+  background: var(--lg, var(--moisture));
   display: inline-block;
   flex-shrink: 0;
 }
-.metric-btn:hover { border-color: var(--border-glow); color: var(--green-300); }
+.metric-btn:hover {
+  border-color: var(--border-default);
+  color: var(--text-1);
+}
 .metric-btn.active {
-  background: rgba(34,197,94,0.12);
-  border-color: rgba(34,197,94,0.45);
-  color: var(--green-300);
+  background: var(--moisture-dim);
+  border-color: transparent;
+  color: var(--moisture);
 }
 
 .history-range {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .range-btn {
-  padding: 7px 16px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--border-dim);
-  background: var(--bg-card-2);
-  color: var(--text-secondary);
+  padding: 6px 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-2);
   font-family: var(--font-body);
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
-.range-btn:hover { border-color: var(--border-glow); color: var(--green-300); }
+.range-btn:hover {
+  border-color: var(--border-default);
+  color: var(--text-1);
+}
 .range-btn.active {
-  background: rgba(34,197,94,0.15);
-  border-color: rgba(34,197,94,0.45);
-  color: var(--green-300);
+  background: var(--moisture-dim);
+  border-color: transparent;
+  color: var(--moisture);
 }
 
-.chart-wrap { position: relative; height: 420px; }
+.chart-wrap { position: relative; height: 400px; }
 #history-chart { width: 100%; height: 100%; display: block; }
 
 .chart-empty {
@@ -749,10 +789,10 @@ body::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.95rem;
-  color: var(--text-secondary);
-  background: var(--bg-card);
-  border-radius: 12px;
+  font-size: 0.88rem;
+  color: var(--text-3);
+  text-align: center;
+  padding: 0 16px;
 }
 .chart-empty.hidden { display: none; }
 
@@ -760,9 +800,9 @@ body::after {
    Footer
 ══════════════════════════════════════════════ */
 .footer {
-  margin-top: 40px;
-  padding-top: 20px;
-  border-top: 1px solid var(--border-dim);
+  margin-top: 32px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -771,163 +811,130 @@ body::after {
 }
 
 .footer p {
-  font-size: 0.84rem;
-  color: var(--text-muted);
+  font-size: 0.78rem;
+  color: var(--text-3);
 }
 
-.footer-controls { display: flex; gap: 12px; }
+.footer-controls { display: flex; gap: 10px; }
 
 .btn-refresh {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--border-dim);
-  background: var(--bg-card);
-  color: var(--text-secondary);
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--text-2);
   font-family: var(--font-body);
-  font-size: 0.92rem;
+  font-size: 0.85rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 .btn-refresh:hover {
-  border-color: var(--border-glow);
-  color: var(--green-300);
-  background: var(--bg-card-2);
+  border-color: var(--border-default);
+  color: var(--text-1);
 }
-.btn-refresh svg { width: 16px; height: 16px; }
-.btn-refresh.spinning svg { animation: spin 0.6s linear infinite; }
+.btn-refresh svg { width: 14px; height: 14px; }
+.btn-refresh.spinning svg { animation: spin 0.5s linear infinite; }
 
 /* ══════════════════════════════════════════════
-   Skeleton loading
-══════════════════════════════════════════════ */
-.skeleton {
-  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-  border-radius: 6px;
-  color: transparent !important;
-  user-select: none;
-}
-@keyframes shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-/* ══════════════════════════════════════════════
-   Responsive — รองรับทุกขนาดหน้าจอ
+   Responsive
 ══════════════════════════════════════════════ */
 
-/* ── หน้าจอกลาง / แท็บเล็ต (≤1024px) — ลดสเกลตลอดช่วง ── */
+/* Tablet (≤1024px) */
 @media (max-width: 1024px) {
-  .header-title h1 { font-size: clamp(1.35rem, 4.5vw, 1.7rem); }
-  .card-value      { font-size: clamp(2.4rem, 6.5vw, 3.2rem); }
+  .header-title h1 { font-size: 1.3rem; }
+  .card-value      { font-size: clamp(2.2rem, 5.5vw, 2.7rem); }
 }
 
-/* ── มือถือ (≤600px) — ปรับสเกลให้กระชับ แตะง่าย ── */
+/* Mobile (≤600px) */
 @media (max-width: 600px) {
-  .page-wrapper { padding: 0 12px 32px; }
+  .page-wrapper { padding: 0 14px 36px; }
 
   .header {
     flex-direction: column;
     align-items: stretch;
-    gap: 14px;
-    padding: 20px 0 18px;
-    margin-bottom: 22px;
+    gap: 12px;
+    padding: 18px 0 16px;
+    margin-bottom: 18px;
   }
-  .header-left { gap: 14px; }
-  .logo-wrap { width: 52px; height: 52px; }
-  .logo-wrap svg { width: 28px; height: 28px; }
-  .header-title h1 { font-size: 1.45rem; }
-  .header-title p { font-size: 0.85rem; }
-  .version-badge { font-size: 0.68rem; padding: 3px 9px; }
+  .logo-wrap { width: 44px; height: 44px; }
+  .logo-wrap svg { width: 24px; height: 24px; }
+  .header-title h1 { font-size: 1.25rem; }
+  .header-title p { font-size: 0.8rem; }
 
-  .header-right { width: 100%; justify-content: space-between; gap: 10px; }
-  .status-badge { padding: 8px 16px; font-size: 0.85rem; gap: 8px; }
-  .status-dot { width: 9px; height: 9px; }
-  .last-update { font-size: 0.84rem; }
-  .ip-badge { font-size: 0.84rem; padding: 6px 14px; }
-  .source-badge { font-size: 0.84rem; padding: 6px 14px; }
+  .header-right { width: 100%; justify-content: space-between; gap: 8px; }
+  .status-badge { padding: 6px 12px; font-size: 0.8rem; }
+  .last-update { font-size: 0.78rem; }
+  .ip-badge { font-size: 0.76rem; padding: 6px 11px; }
+  .source-badge { font-size: 0.76rem; padding: 6px 11px; }
 
-  .connecting-banner { padding: 14px 18px; gap: 12px; margin-bottom: 16px; }
-  .connecting-banner p { font-size: 0.95rem; }
-  .connecting-banner small { font-size: 0.8rem; }
+  .connecting-banner { padding: 13px 14px; gap: 10px; margin-bottom: 14px; }
+  .banner-btn { width: 100%; padding: 9px 14px; }
 
-  .cards-grid { grid-template-columns: 1fr; gap: 14px; margin-bottom: 20px; }
-  .card { padding: 22px 18px 18px; }
-  .card-header { margin-bottom: 14px; }
-  .card-label { font-size: 0.9rem; }
-  .card-icon { width: 40px; height: 40px; }
-  .card-icon svg { width: 20px; height: 20px; }
-  .card-value { font-size: clamp(2.4rem, 12vw, 3rem); }
-  .card-unit { font-size: 0.95rem; margin-left: 4px; }
-  .card-status { font-size: 0.86rem; padding: 5px 12px; margin-top: 12px; }
+  .cards-grid { grid-template-columns: 1fr; gap: 12px; margin-bottom: 20px; }
+  .card { padding: 17px 16px; border-radius: var(--r-md); }
+  .card-header { margin-bottom: 12px; }
+  .card-label { font-size: 0.85rem; }
+  .card-icon { width: 33px; height: 33px; }
+  .card-icon svg { width: 17px; height: 17px; }
+  .card-value { font-size: clamp(2.2rem, 11vw, 2.7rem); }
+  .card-status { font-size: 0.79rem; padding: 5px 11px; margin-top: 12px; }
 
-  .moisture-bar-wrap { margin-top: 14px; }
-  .moisture-bar-track { height: 10px; }
-  .moisture-labels span { font-size: 0.76rem; }
+  .moisture-bar-wrap { margin-top: 12px; }
 
-  .npk-bars { margin-top: 14px; gap: 12px; }
-  .npk-label { font-size: 0.88rem; width: 18px; }
-  .npk-track { height: 8px; }
-  .npk-val { font-size: 0.86rem; width: 52px; }
+  .npk-bars { gap: 11px; }
+  .npk-label { font-size: 0.78rem; width: 15px; }
+  .npk-val { font-size: 0.78rem; width: 48px; }
 
   .crop-selector {
     flex-direction: column;
     align-items: stretch;
-    padding: 14px 16px;
-    gap: 10px;
+    padding: 13px 14px;
+    gap: 8px;
     margin-bottom: 16px;
   }
-  .crop-selector-label { font-size: 0.95rem; }
-  .crop-selector-controls { flex-direction: column; align-items: stretch; gap: 10px; }
-  .crop-selector select { width: 100%; font-size: 0.95rem; padding: 12px 44px 12px 16px; }
-  .crop-badge { font-size: 0.9rem; padding: 8px 14px; text-align: center; }
-  .crop-selector-hint { font-size: 0.8rem; }
+  .crop-selector-controls { flex-direction: column; align-items: stretch; gap: 8px; }
+  .crop-selector select { width: 100%; padding: 10px 38px 10px 14px; }
+  .crop-badge { text-align: center; }
+  .crop-selector-hint { font-size: 0.75rem; }
 
-  .section-title { font-size: 0.9rem; margin-bottom: 14px; }
-  .rec-grid { grid-template-columns: 1fr; gap: 12px; }
-  .rec-item { padding: 14px 16px; gap: 12px; }
-  .rec-icon { font-size: 1.3rem; }
-  .rec-title { font-size: 0.95rem; }
-  .rec-desc { font-size: 0.88rem; line-height: 1.5; }
+  .section-title { font-size: 0.9rem; margin-bottom: 10px; }
 
-  .history-card { padding: 14px 16px; margin-bottom: 20px; }
-  .history-toolbar { gap: 10px; margin-bottom: 12px; }
-  .legend-item { font-size: 0.84rem; gap: 6px; }
-  .range-btn { font-size: 0.84rem; padding: 6px 14px; }
-  .chart-wrap { height: 200px; }
+  .soil-visual-card { padding: 14px 14px; gap: 12px; margin-bottom: 20px; }
+  .soil-layer { flex-wrap: wrap; gap: 8px 12px; }
+  .layer-info { width: auto; flex: 1; flex-direction: row; align-items: baseline; gap: 8px; }
+  .layer-bar { flex-basis: 100%; order: 3; }
+  .layer-moisture { width: auto; }
 
-  .footer { margin-top: 28px; }
-  .footer p { font-size: 0.8rem; }
-  .btn-refresh { font-size: 0.9rem; padding: 10px 16px; }
+  .rec-grid { grid-template-columns: 1fr; gap: 8px; }
+  .rec-item { padding: 12px 14px; gap: 10px; }
+  .rec-title { font-size: 0.86rem; }
+  .rec-desc { font-size: 0.8rem; }
 
-  .mock-banner { padding: 10px 16px; font-size: 0.86rem; }
+  .history-card { padding: 12px 13px; margin-bottom: 20px; }
+  .metric-btn { font-size: 0.75rem; padding: 5px 10px; }
+  .range-btn { font-size: 0.79rem; padding: 5px 12px; }
+  .chart-wrap { height: 220px; }
+
+  .footer { margin-top: 22px; }
 }
 
-/* ── จอเล็กพิเศษ (≤380px) — กันล้นขอบ ── */
+/* Small screens (≤380px) */
 @media (max-width: 380px) {
-  .card-value { font-size: clamp(2.2rem, 13vw, 2.6rem); }
+  .card-value { font-size: clamp(2rem, 12vw, 2.4rem); }
   .npk-val { width: auto; }
 }
 
-/* ══════════════════════════════════════════════
-   Mock data banner
-══════════════════════════════════════════════ */
-.mock-banner {
-  display: none;
-  padding: 12px 22px;
-  border-radius: 12px;
-  background: rgba(59,130,246,0.08);
-  border: 1px solid rgba(59,130,246,0.2);
-  font-size: 0.9rem;
-  color: var(--blue-400);
-  margin-bottom: 22px;
-  align-items: center;
-  gap: 10px;
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
-.mock-banner.visible { display: flex; }
 
 </style>
 </head>
@@ -954,8 +961,7 @@ body::after {
         </div>
         <div class="header-title">
           <h1>Agriscan</h1>
-          <p>Real-time Soil Sensor Dashboard</p>
-          <span class="version-badge">Ⓥ 2.4.4</span>
+          <p>แดชบอร์ดเซ็นเซอร์ดินแบบเรียลไทม์</p>
         </div>
       </div>
 
@@ -974,15 +980,12 @@ body::after {
     <!-- ═══ CONNECTING BANNER ═══ -->
     <div class="connecting-banner" id="connecting-banner">
       <div class="connecting-spinner"></div>
-      <div
-        style="flex: 1; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+      <div class="banner-body">
         <div>
           <p>กำลังเชื่อมต่อกับ ESP32...</p>
-          <small id="retry-count">กำลังลอง retry...</small>
+          <small id="retry-count">กำลังลองใหม่...</small>
         </div>
-        <button onclick="changeIp()"
-          style="background: rgba(251,191,36,0.15); border: 1px solid rgba(251,191,36,0.4); color: var(--amber-400); padding: 5px 12px; border-radius: var(--radius-pill); cursor: pointer; font-size: 0.75rem; font-family: var(--font-body);">⚙
-          ระบุ IP ของ ESP32</button>
+        <button class="banner-btn" onclick="changeIp()">⚙ ระบุ IP ของ ESP32</button>
       </div>
     </div>
 
@@ -991,7 +994,7 @@ body::after {
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
       </svg>
-      ⚙ แสดงข้อมูลจำลอง (Mock Data) — ESP32 ยังไม่ได้เชื่อมต่อ
+      แสดงข้อมูลจำลอง — ESP32 ยังไม่ได้เชื่อมต่อ
     </div>
 
     <!-- ═══ CROP SELECTOR ═══ -->
@@ -1027,17 +1030,17 @@ body::after {
     <div class="cards-grid" id="cards-grid">
 
       <!-- Moisture -->
-      <div class="card" id="card-moisture" style="--card-accent: linear-gradient(90deg,#22c55e,#4ade80);">
+      <div class="card" id="card-moisture">
         <div class="card-header">
-          <span class="card-label">ความชื้น</span>
-          <div class="card-icon" style="--icon-bg: rgba(34,197,94,0.15);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="1.8" stroke-linecap="round"
+          <span class="card-label">ความชื้นดิน</span>
+          <div class="card-icon icon-moisture">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
               stroke-linejoin="round">
               <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
             </svg>
           </div>
         </div>
-        <div>
+        <div class="card-value-row">
           <span class="card-value" id="val-moisture">--</span>
           <span class="card-unit">%</span>
         </div>
@@ -1045,27 +1048,22 @@ body::after {
           <div class="moisture-bar-track">
             <div class="moisture-bar-fill" id="bar-moisture" style="width: 0%;"></div>
           </div>
-          <div class="moisture-labels">
-            <span>0%</span>
-            <span>50%</span>
-            <span>100%</span>
-          </div>
         </div>
         <div class="card-status ok" id="status-moisture">● ปกติ</div>
       </div>
 
       <!-- Temperature -->
-      <div class="card" id="card-temp" style="--card-accent: linear-gradient(90deg,#f97316,#fbbf24);">
+      <div class="card" id="card-temp">
         <div class="card-header">
           <span class="card-label">อุณหภูมิ</span>
-          <div class="card-icon" style="--icon-bg: rgba(249,115,22,0.15);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#fb923c" stroke-width="1.8" stroke-linecap="round"
+          <div class="card-icon icon-temp">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
               stroke-linejoin="round">
               <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z" />
             </svg>
           </div>
         </div>
-        <div>
+        <div class="card-value-row">
           <span class="card-value" id="val-temperature">--</span>
           <span class="card-unit">°C</span>
         </div>
@@ -1073,17 +1071,17 @@ body::after {
       </div>
 
       <!-- EC -->
-      <div class="card" id="card-ec" style="--card-accent: linear-gradient(90deg,#06b6d4,#2dd4bf);">
+      <div class="card" id="card-ec">
         <div class="card-header">
-          <span class="card-label">EC / ค่าการนำไฟฟ้า</span>
-          <div class="card-icon" style="--icon-bg: rgba(6,182,212,0.15);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#22d3ee" stroke-width="1.8" stroke-linecap="round"
+          <span class="card-label">ค่าการนำไฟฟ้า (EC)</span>
+          <div class="card-icon icon-ec">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
               stroke-linejoin="round">
               <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
             </svg>
           </div>
         </div>
-        <div>
+        <div class="card-value-row">
           <span class="card-value" id="val-ec">--</span>
           <span class="card-unit">dS/m</span>
         </div>
@@ -1091,18 +1089,18 @@ body::after {
       </div>
 
       <!-- pH -->
-      <div class="card" id="card-ph" style="--card-accent: linear-gradient(90deg,#a855f7,#ec4899);">
+      <div class="card" id="card-ph">
         <div class="card-header">
-          <span class="card-label">pH ดิน</span>
-          <div class="card-icon" style="--icon-bg: rgba(168,85,247,0.15);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="1.8" stroke-linecap="round"
+          <span class="card-label">กรด–ด่าง (pH)</span>
+          <div class="card-icon icon-ph">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
               stroke-linejoin="round">
               <circle cx="12" cy="12" r="10" />
               <path d="M8 12h8M12 8v8" />
             </svg>
           </div>
         </div>
-        <div>
+        <div class="card-value-row">
           <span class="card-value" id="val-ph">--</span>
           <span class="card-unit">pH</span>
         </div>
@@ -1112,9 +1110,9 @@ body::after {
       <!-- NPK -->
       <div class="card npk-card">
         <div class="card-header">
-          <span class="card-label">N · P · K (ธาตุอาหาร)</span>
-          <div class="card-icon" style="--icon-bg: rgba(168,85,247,0.15);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="1.8" stroke-linecap="round"
+          <span class="card-label">ธาตุอาหารดิน (N·P·K)</span>
+          <div class="card-icon icon-npk">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
               stroke-linejoin="round">
               <circle cx="12" cy="7" r="4" />
               <path d="M5 21v-2a7 7 0 0 1 14 0v2" />
@@ -1144,10 +1142,50 @@ body::after {
             <span class="npk-val" id="val-k">-- <small>mg/kg</small></span>
           </div>
         </div>
-        <div class="card-status ok" id="status-npk" style="margin-top:14px;">● ปกติ</div>
+        <div class="card-status ok npk-status" id="status-npk">● ปกติ</div>
       </div>
 
     </div><!-- /cards-grid -->
+
+    <!-- ═══ SOIL MOISTURE BY DEPTH ═══ -->
+    <div class="section-title">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C9.24 2 7 4.24 7 7c0 2.09 1.24 3.88 3 4.73V22h4V11.73A4.996 4.996 0 0 0 17 7c0-2.76-2.24-5-5-5z"/>
+      </svg>
+      ความชื้นแยกตามระดับความลึกของดิน
+    </div>
+    <div class="soil-visual-card">
+      <div class="soil-layer" id="layer-surface">
+        <div class="layer-info">
+          <span class="layer-label">ผิวดิน</span>
+          <span class="layer-depth">0–15 ซม.</span>
+        </div>
+        <div class="layer-bar">
+          <div class="layer-bar-fill" id="bar-soil-surface" style="width:0%"></div>
+        </div>
+        <span class="layer-moisture" id="soil-surface">--%</span>
+      </div>
+      <div class="soil-layer" id="layer-mid">
+        <div class="layer-info">
+          <span class="layer-label">ชั้นกลาง</span>
+          <span class="layer-depth">15–30 ซม.</span>
+        </div>
+        <div class="layer-bar">
+          <div class="layer-bar-fill" id="bar-soil-mid" style="width:0%"></div>
+        </div>
+        <span class="layer-moisture" id="soil-mid">--%</span>
+      </div>
+      <div class="soil-layer" id="layer-deep">
+        <div class="layer-info">
+          <span class="layer-label">ชั้นลึก</span>
+          <span class="layer-depth">30–60 ซม.</span>
+        </div>
+        <div class="layer-bar">
+          <div class="layer-bar-fill" id="bar-soil-deep" style="width:0%"></div>
+        </div>
+        <span class="layer-moisture" id="soil-deep">--%</span>
+      </div>
+    </div>
 
     <!-- ═══ RECOMMENDATIONS ═══ -->
     <div class="section-title">
@@ -1181,7 +1219,7 @@ body::after {
           <button type="button" class="metric-btn" data-metric="temperature" onclick="setChartMetric('temperature')"><i style="--lg:#fb923c;"></i>อุณหภูมิ (°C)</button>
           <button type="button" class="metric-btn" data-metric="ec" onclick="setChartMetric('ec')"><i style="--lg:#22d3ee;"></i>EC (dS/m)</button>
           <button type="button" class="metric-btn" data-metric="ph" onclick="setChartMetric('ph')"><i style="--lg:#a855f7;"></i>pH</button>
-          <button type="button" class="metric-btn" data-metric="npk" onclick="setChartMetric('npk')"><i style="--lg:#f472b6; background:linear-gradient(90deg,#f472b6 25%,#fbbf24 25% 50%,#60a5fa 50%);"></i>N·P·K (mg/kg)</button>
+          <button type="button" class="metric-btn" data-metric="npk" onclick="setChartMetric('npk')"><i style="--lg:#4ade80; background:linear-gradient(90deg,#4ade80 33%,#60a5fa 33% 66%,#fb923c 66%);"></i>N·P·K (mg/kg)</button>
         </div>
         <div class="history-range">
           <button class="range-btn active" data-hours="24" onclick="setHistoryRange(24)">24 ชม.</button>
@@ -1650,6 +1688,9 @@ function updateUI(d) {
   // Recommendations
   buildRecommendations(d, npk);
 
+  // Soil moisture visualization
+  updateSoilVisualization(d.moisture);
+
   // Timestamp — แสดงเวลาที่เซ็นเซอร์ส่งค่า (จากคลาวด์) ถ้า API ให้มา
   const ts = d.timestamp ? new Date(d.timestamp) : new Date();
   $('last-update').textContent = ts.toLocaleTimeString('th-TH');
@@ -1737,6 +1778,44 @@ function buildRecommendations(d, npk) {
   if (grid.dataset.recs === key) return;
   grid.dataset.recs = key;
   grid.innerHTML = html;
+}
+
+// ─── Soil Moisture Visualization ──────────────────────────
+function moistureLevel(m) {
+  if (m < 30) return 'dry';
+  if (m <= 70) return 'moist';
+  return 'wet';
+}
+
+function updateSoilVisualization(moisture) {
+  const surface = $('soil-surface');
+  const mid = $('soil-mid');
+  const deep = $('soil-deep');
+  if (!surface || !mid || !deep) return;
+
+  // ประมาณการกระจายตามความลึก: ผิวดินแปรปรวนตามน้ำ/ฝนมากที่สุด ชั้นลึกนิ่งกว่า
+  const surfaceMoisture = clamp(moisture * 1.1, 0, 100);
+  const midMoisture = clamp(moisture * 0.9, 0, 100);
+  const deepMoisture = clamp(moisture * 0.7, 0, 100);
+
+  setValue('soil-surface', surfaceMoisture.toFixed(1) + '%');
+  setValue('soil-mid', midMoisture.toFixed(1) + '%');
+  setValue('soil-deep', deepMoisture.toFixed(1) + '%');
+
+  animateBar('bar-soil-surface', surfaceMoisture, 100);
+  animateBar('bar-soil-mid', midMoisture, 100);
+  animateBar('bar-soil-deep', deepMoisture, 100);
+
+  setLayerLevel('layer-surface', surfaceMoisture);
+  setLayerLevel('layer-mid', midMoisture);
+  setLayerLevel('layer-deep', deepMoisture);
+}
+
+function setLayerLevel(id, moisture) {
+  const el = $(id);
+  if (!el) return;
+  const lvl = moistureLevel(moisture);
+  if (el.dataset.level !== lvl) el.dataset.level = lvl;
 }
 
 // ─── Helpers ──────────────────────────────────────────────
@@ -1858,9 +1937,9 @@ const METRICS = {
                  lines: [{ key: 'ph', color: '#a855f7' }] },
   npk:         { title: 'N·P·K (mg/kg)', auto: true, zero: true,
                  lines: [
-                   { key: 'n', color: '#f472b6', lbl: 'N' },
-                   { key: 'p', color: '#fbbf24', lbl: 'P' },
-                   { key: 'k', color: '#60a5fa', lbl: 'K' },
+                   { key: 'n', color: '#4ade80', lbl: 'N' },
+                   { key: 'p', color: '#60a5fa', lbl: 'P' },
+                   { key: 'k', color: '#fb923c', lbl: 'K' },
                  ] },
 };
 
@@ -1991,7 +2070,7 @@ function drawHistory() {
   };
 
   // เส้นกริดแนวตั้ง 4 เส้น + ป้ายเวลาที่แถวล่าง
-  ctx.strokeStyle = 'rgba(34,197,94,0.10)';
+  ctx.strokeStyle = 'rgba(169,198,179,0.08)';
   ctx.lineWidth = 1;
   for (let i = 0; i <= 4; i++) {
     const gx = pad.left + (plotW * i) / 4;
@@ -2000,7 +2079,7 @@ function drawHistory() {
     ctx.lineTo(gx, plotBottom);
     ctx.stroke();
   }
-  ctx.fillStyle = 'rgba(148,163,184,0.75)';
+  ctx.fillStyle = 'rgba(169,198,179,0.6)';
   ctx.font = '10px JetBrains Mono, monospace';
   ctx.textAlign = 'center';
   for (let i = 0; i <= 4; i++) {
@@ -2017,12 +2096,12 @@ function drawHistory() {
   for (let k = 0; k <= 4; k++) {
     const v = rng.min + (vSpan * k) / 4;
     const gy = y(v);
-    ctx.strokeStyle = 'rgba(148,163,184,0.16)';
+    ctx.strokeStyle = 'rgba(169,198,179,0.10)';
     ctx.beginPath();
     ctx.moveTo(pad.left, gy);
     ctx.lineTo(pad.left + plotW, gy);
     ctx.stroke();
-    ctx.fillStyle = 'rgba(148,163,184,0.6)';
+    ctx.fillStyle = 'rgba(169,198,179,0.6)';
     ctx.font = '10px JetBrains Mono, monospace';
     ctx.fillText(fmt(v, m), pad.left - 8, gy + 3);
   }
@@ -2036,7 +2115,7 @@ function drawHistory() {
     ctx.arc(pad.left + 5, pad.top - 8, 3.5, 0, Math.PI * 2);
     ctx.fill();
   });
-  ctx.fillStyle = 'rgba(148,163,184,0.9)';
+  ctx.fillStyle = 'rgba(169,198,179,0.9)';
   ctx.fillText(m.title, pad.left + 14, pad.top - 5);
 
   // เส้นข้อมูลของค่านี้
@@ -2099,7 +2178,7 @@ function chartHover(ev) {
   const ctx = canvas.getContext('2d');
   const px = d.pad.left + ((parseTs(pt.timestamp) - d.tMin) / d.span) * d.plotW;
 
-  ctx.strokeStyle = 'rgba(148,163,184,0.45)';
+  ctx.strokeStyle = 'rgba(169,198,179,0.4)';
   ctx.lineWidth = 1;
   ctx.setLineDash([4, 4]);
   ctx.beginPath();
@@ -2128,9 +2207,9 @@ function chartHover(ev) {
   ctx.textAlign = 'left';
   const tw = (ctx.measureText ? ctx.measureText(info).width : info.length * 7) + 16;
   const bx = Math.min(d.pad.left + d.plotW - tw, d.pad.left + 8);
-  ctx.fillStyle = 'rgba(2,6,23,0.92)';
+  ctx.fillStyle = 'rgba(8,20,13,0.94)';
   ctx.fillRect(bx, d.pad.top - 16, tw, 18);
-  ctx.fillStyle = '#e2e8f0';
+  ctx.fillStyle = '#f0f7f1';
   ctx.fillText(info, bx + 8, d.pad.top - 3);
 }
 

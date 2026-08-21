@@ -239,6 +239,9 @@ function updateUI(d) {
   // Recommendations
   buildRecommendations(d, npk);
 
+  // Soil moisture visualization
+  updateSoilVisualization(d.moisture);
+
   // Timestamp — แสดงเวลาที่เซ็นเซอร์ส่งค่า (จากคลาวด์) ถ้า API ให้มา
   const ts = d.timestamp ? new Date(d.timestamp) : new Date();
   $('last-update').textContent = ts.toLocaleTimeString('th-TH');
@@ -326,6 +329,44 @@ function buildRecommendations(d, npk) {
   if (grid.dataset.recs === key) return;
   grid.dataset.recs = key;
   grid.innerHTML = html;
+}
+
+// ─── Soil Moisture Visualization ──────────────────────────
+function moistureLevel(m) {
+  if (m < 30) return 'dry';
+  if (m <= 70) return 'moist';
+  return 'wet';
+}
+
+function updateSoilVisualization(moisture) {
+  const surface = $('soil-surface');
+  const mid = $('soil-mid');
+  const deep = $('soil-deep');
+  if (!surface || !mid || !deep) return;
+
+  // ประมาณการกระจายตามความลึก: ผิวดินแปรปรวนตามน้ำ/ฝนมากที่สุด ชั้นลึกนิ่งกว่า
+  const surfaceMoisture = clamp(moisture * 1.1, 0, 100);
+  const midMoisture = clamp(moisture * 0.9, 0, 100);
+  const deepMoisture = clamp(moisture * 0.7, 0, 100);
+
+  setValue('soil-surface', surfaceMoisture.toFixed(1) + '%');
+  setValue('soil-mid', midMoisture.toFixed(1) + '%');
+  setValue('soil-deep', deepMoisture.toFixed(1) + '%');
+
+  animateBar('bar-soil-surface', surfaceMoisture, 100);
+  animateBar('bar-soil-mid', midMoisture, 100);
+  animateBar('bar-soil-deep', deepMoisture, 100);
+
+  setLayerLevel('layer-surface', surfaceMoisture);
+  setLayerLevel('layer-mid', midMoisture);
+  setLayerLevel('layer-deep', deepMoisture);
+}
+
+function setLayerLevel(id, moisture) {
+  const el = $(id);
+  if (!el) return;
+  const lvl = moistureLevel(moisture);
+  if (el.dataset.level !== lvl) el.dataset.level = lvl;
 }
 
 // ─── Helpers ──────────────────────────────────────────────
@@ -447,9 +488,9 @@ const METRICS = {
                  lines: [{ key: 'ph', color: '#a855f7' }] },
   npk:         { title: 'N·P·K (mg/kg)', auto: true, zero: true,
                  lines: [
-                   { key: 'n', color: '#f472b6', lbl: 'N' },
-                   { key: 'p', color: '#fbbf24', lbl: 'P' },
-                   { key: 'k', color: '#60a5fa', lbl: 'K' },
+                   { key: 'n', color: '#4ade80', lbl: 'N' },
+                   { key: 'p', color: '#60a5fa', lbl: 'P' },
+                   { key: 'k', color: '#fb923c', lbl: 'K' },
                  ] },
 };
 
@@ -580,7 +621,7 @@ function drawHistory() {
   };
 
   // เส้นกริดแนวตั้ง 4 เส้น + ป้ายเวลาที่แถวล่าง
-  ctx.strokeStyle = 'rgba(34,197,94,0.10)';
+  ctx.strokeStyle = 'rgba(169,198,179,0.08)';
   ctx.lineWidth = 1;
   for (let i = 0; i <= 4; i++) {
     const gx = pad.left + (plotW * i) / 4;
@@ -589,7 +630,7 @@ function drawHistory() {
     ctx.lineTo(gx, plotBottom);
     ctx.stroke();
   }
-  ctx.fillStyle = 'rgba(148,163,184,0.75)';
+  ctx.fillStyle = 'rgba(169,198,179,0.6)';
   ctx.font = '10px JetBrains Mono, monospace';
   ctx.textAlign = 'center';
   for (let i = 0; i <= 4; i++) {
@@ -606,12 +647,12 @@ function drawHistory() {
   for (let k = 0; k <= 4; k++) {
     const v = rng.min + (vSpan * k) / 4;
     const gy = y(v);
-    ctx.strokeStyle = 'rgba(148,163,184,0.16)';
+    ctx.strokeStyle = 'rgba(169,198,179,0.10)';
     ctx.beginPath();
     ctx.moveTo(pad.left, gy);
     ctx.lineTo(pad.left + plotW, gy);
     ctx.stroke();
-    ctx.fillStyle = 'rgba(148,163,184,0.6)';
+    ctx.fillStyle = 'rgba(169,198,179,0.6)';
     ctx.font = '10px JetBrains Mono, monospace';
     ctx.fillText(fmt(v, m), pad.left - 8, gy + 3);
   }
@@ -625,7 +666,7 @@ function drawHistory() {
     ctx.arc(pad.left + 5, pad.top - 8, 3.5, 0, Math.PI * 2);
     ctx.fill();
   });
-  ctx.fillStyle = 'rgba(148,163,184,0.9)';
+  ctx.fillStyle = 'rgba(169,198,179,0.9)';
   ctx.fillText(m.title, pad.left + 14, pad.top - 5);
 
   // เส้นข้อมูลของค่านี้
@@ -688,7 +729,7 @@ function chartHover(ev) {
   const ctx = canvas.getContext('2d');
   const px = d.pad.left + ((parseTs(pt.timestamp) - d.tMin) / d.span) * d.plotW;
 
-  ctx.strokeStyle = 'rgba(148,163,184,0.45)';
+  ctx.strokeStyle = 'rgba(169,198,179,0.4)';
   ctx.lineWidth = 1;
   ctx.setLineDash([4, 4]);
   ctx.beginPath();
@@ -717,9 +758,9 @@ function chartHover(ev) {
   ctx.textAlign = 'left';
   const tw = (ctx.measureText ? ctx.measureText(info).width : info.length * 7) + 16;
   const bx = Math.min(d.pad.left + d.plotW - tw, d.pad.left + 8);
-  ctx.fillStyle = 'rgba(2,6,23,0.92)';
+  ctx.fillStyle = 'rgba(8,20,13,0.94)';
   ctx.fillRect(bx, d.pad.top - 16, tw, 18);
-  ctx.fillStyle = '#e2e8f0';
+  ctx.fillStyle = '#f0f7f1';
   ctx.fillText(info, bx + 8, d.pad.top - 3);
 }
 
